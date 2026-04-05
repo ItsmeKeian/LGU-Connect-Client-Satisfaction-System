@@ -1,12 +1,4 @@
-<?php
-session_start();
-if (!isset($_SESSION['user_id']) || $_SESSION['role'] !== 'superadmin') {
-    header("Location: ../login.php");
-    exit();
-}
-$userName     = $_SESSION['name'] ?? 'Administrator';
-$userInitials = strtoupper(substr(str_replace(' ', '', $userName), 0, 2));
-?>
+
 <!DOCTYPE html>
 <html lang="en">
 <head>
@@ -36,7 +28,7 @@ $userInitials = strtoupper(substr(str_replace(' ', '', $userName), 0, 2));
     <div class="sb-role">
       <div class="role-dot"></div>
       <div>
-        <div class="role-name" id="sidebarUserName"><?= htmlspecialchars($userName) ?></div>
+        <div class="role-name" id="sidebarUserName"></div>
         <div class="role-sub">Super Administrator</div>
       </div>
     </div>
@@ -109,7 +101,7 @@ $userInitials = strtoupper(substr(str_replace(' ', '', $userName), 0, 2));
         <button class="tb-btn primary" onclick="location.href='csmr_generator.php'">
           &#128196; Generate CSMR
         </button>
-        <div class="tb-avatar" id="topbarAvatar"><?= $userInitials ?></div>
+        <div class="tb-avatar" id="topbarAvatar"></div>
       </div>
     </div>
 
@@ -298,7 +290,7 @@ $userInitials = strtoupper(substr(str_replace(' ', '', $userName), 0, 2));
 <!-- Scripts -->
 <script src="https://cdnjs.cloudflare.com/ajax/libs/jquery/3.7.1/jquery.min.js"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.min.js"></script>
-<script src="../assets/js/admin_dashboard.js"></script>
+<script src="../js/admin_dashboard.js"></script>
 
 </body>
 </html>
