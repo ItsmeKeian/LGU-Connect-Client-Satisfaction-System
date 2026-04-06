@@ -1,25 +1,13 @@
 <?php
 session_start();
+
 if (isset($_SESSION['user_id'])) {
-    header("Location: " . ($_SESSION['role']==='superadmin' ? "admin/admin_dashboard.php" : "department/dept_dashboard.php"));
+  header("Location: " . (
+    $_SESSION['role'] === 'superadmin'
+    ? "/lgu-connect/admin/admin_dashboard.php"
+    : "/lgu-connect/department/dept_dashboard.php"
+));
     exit();
-}
-$error = "";
-if ($_SERVER['REQUEST_METHOD'] === 'POST') {
-    $email    = trim($_POST['email'] ?? '');
-    $password = trim($_POST['password'] ?? '');
-    // TODO: Replace with real DB query + password_verify()
-    if ($email === 'admin@sanjulian.gov.ph' && $password === 'Admin@123') {
-        $_SESSION['user_id'] = 1; $_SESSION['role'] = 'superadmin';
-        $_SESSION['name'] = 'Municipal Administrator'; $_SESSION['department_id'] = null;
-        header("Location: admin/admin_dashboard.php"); exit();
-    } elseif ($email === 'civilreg@sanjulian.gov.ph' && $password === 'Dept@123') {
-        $_SESSION['user_id'] = 2; $_SESSION['role'] = 'dept_admin';
-        $_SESSION['name'] = 'Civil Registry Office'; $_SESSION['department_id'] = 1;
-        header("Location: department/dept_dashboard.php"); exit();
-    } else {
-        $error = "Invalid email or password. Please try again.";
-    }
 }
 ?>
 <!DOCTYPE html>
@@ -80,14 +68,15 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
       <div class="c-title">Sign in to<br>your account</div>
       <div class="c-hint">Use your official LGU email credentials.</div>
 
-      <?php if ($error): ?>
-      <div class="alert">
-        <span class="alert-icon">&#9888;</span>
-        <span><?= htmlspecialchars($error) ?></span>
-      </div>
+      <?php if (isset($_SESSION['error'])): ?>
+        <div class="alert">
+          <span class="alert-icon">&#9888;</span>
+          <span><?= htmlspecialchars($_SESSION['error']) ?></span>
+        </div>
+        <?php unset($_SESSION['error']); ?>
       <?php endif; ?>
 
-      <form method="POST" action="" id="loginForm" autocomplete="off">
+      <form method="POST" action="php/login.php" id="loginForm" autocomplete="off">
 
         <div class="fg">
           <label class="flabel" for="email">Email Address</label>
