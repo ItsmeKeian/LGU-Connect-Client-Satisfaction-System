@@ -3,8 +3,7 @@ $('#menuToggle').on('click', function () {
 });
 
 /* ═══════════════════════════════════════════════════════
-   FEEDBACK INBOX - FRONTEND INTERACTIONS
-   Pure frontend JavaScript - no backend calls yet
+   FEEDBACK INBOX 
    ═══════════════════════════════════════════════════════ */
 
    $(document).ready(function() {
@@ -380,7 +379,7 @@ $('#menuToggle').on('click', function () {
   }
   
   // ────────── CSS for Notifications ────────── 
-  // Add this to your CSS file:
+  // 
   /*
   .notification {
     position: fixed;

@@ -1,7 +1,7 @@
 <?php
 session_start();
 if (isset($_SESSION['user_id'])) {
-    header("Location: " . ($_SESSION['role']==='superadmin' ? "admin/dashboard.php" : "department/dashboard.php"));
+    header("Location: " . ($_SESSION['role']==='superadmin' ? "admin/admin_dashboard.php" : "department/dept_dashboard.php"));
     exit();
 }
 $error = "";
@@ -12,11 +12,11 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     if ($email === 'admin@sanjulian.gov.ph' && $password === 'Admin@123') {
         $_SESSION['user_id'] = 1; $_SESSION['role'] = 'superadmin';
         $_SESSION['name'] = 'Municipal Administrator'; $_SESSION['department_id'] = null;
-        header("Location: admin/dashboard.php"); exit();
+        header("Location: admin/admin_dashboard.php"); exit();
     } elseif ($email === 'civilreg@sanjulian.gov.ph' && $password === 'Dept@123') {
         $_SESSION['user_id'] = 2; $_SESSION['role'] = 'dept_admin';
         $_SESSION['name'] = 'Civil Registry Office'; $_SESSION['department_id'] = 1;
-        header("Location: department/dashboard.php"); exit();
+        header("Location: department/dept_dashboard.php"); exit();
     } else {
         $error = "Invalid email or password. Please try again.";
     }
@@ -125,7 +125,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
       </form>
 
       <div class="powered">
-        Powered by <strong>ESSU College of Computer Studies</strong>
+        Powered by <strong></strong>
         &nbsp;&middot;&nbsp; LGU-Connect 2026
       </div>
 

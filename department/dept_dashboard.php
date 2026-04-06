@@ -29,7 +29,7 @@
     <div class="sb-role">
       <div class="role-dot"></div>
       <div>
-        <div class="role-name" id="sidebarUserName"></div>
+        <div class="role-name" id="sidebarUserName">Department Admin</div>
         <div class="role-sub">Department Administrator</div>
       </div>
     </div>

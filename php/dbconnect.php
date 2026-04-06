@@ -3,7 +3,7 @@
 $host = "localhost";
 $user = "root";
 $pass = "";
-$dbname = "ditms-borongan";
+$dbname = "lgu-connect";
 
 try {
 

@@ -9,7 +9,7 @@ $username = $_POST["username"];
 $password = $_POST["password"];
 
 $stmt = $conn->prepare(
-    "SELECT * FROM user WHERE username=?"
+    "SELECT * FROM users WHERE username=?"
 );
 
 $stmt->execute([$username]);
