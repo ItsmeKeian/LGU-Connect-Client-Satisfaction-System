@@ -93,7 +93,7 @@ $(function () {
         $('#overallBadge').text('Overall: ' + s.avgScore.toFixed(1) + ' / 5.0');
     }
 
-    /* ── Populate SQD table ───────────────────────────────────── */
+ 
     function loadSQDTable() {
         const rows = DATA.sqd.map(item => {
             const pct = Math.round((item.score / 5) * 100);
@@ -116,7 +116,7 @@ $(function () {
         $('#sqdTableBody').html(rows);
     }
 
-    /* ── Populate recent feedback ─────────────────────────────── */
+ 
     function loadRecentFeedback() {
         const deptInitials = (typeof DEPT_NAME !== 'undefined')
             ? DEPT_NAME.replace(/[^A-Za-z]/g, '').slice(0, 2).toUpperCase()
@@ -141,7 +141,7 @@ $(function () {
         $('#recentFeedbackList').html(items);
     }
 
-    /* ── Populate rating breakdown ────────────────────────────── */
+
     function loadRatingBreakdown() {
         const total = DATA.stats.totalFeedback;
         const html  = Object.entries(DATA.ratingDist)
