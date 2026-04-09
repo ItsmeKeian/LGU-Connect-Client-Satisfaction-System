@@ -625,7 +625,7 @@ function loadDepartments() {
       <p class="mt-3">Loading departments...</p>
     </div>`);
 
-  $.get('../php/ajax/get_departments.php', function(res) {
+  $.get('../php/get/get_departments.php', function(res) {
     if (!res.success || !res.data.length) {
       $('#deptGrid').html(`
         <div class="empty-state">
@@ -782,7 +782,7 @@ function saveDepartment() {
   btn.disabled = true;
   btn.innerHTML = '<span class="spinner-border spinner-border-sm me-1"></span> Saving...';
 
-  $.post('../php/ajax/save_department.php', payload, function(res) {
+  $.post('../php/save/save_department.php', payload, function(res) {
     btn.disabled = false;
     btn.innerHTML = '<i class="bi bi-check-lg me-1"></i> Save Department';
     if (res.success) {
@@ -812,7 +812,7 @@ function confirmDelete() {
   btn.disabled = true;
   btn.innerHTML = '<span class="spinner-border spinner-border-sm"></span>';
 
-  $.post('../php/ajax/delete_department.php', {id: deleteTargetId}, function(res) {
+  $.post('../php/delete/delete_department.php', {id: deleteTargetId}, function(res) {
     btn.disabled = false;
     btn.innerHTML = '<i class="bi bi-trash me-1"></i> Yes, Delete';
     deleteModal.hide();
