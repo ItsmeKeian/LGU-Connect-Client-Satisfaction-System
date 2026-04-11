@@ -420,36 +420,13 @@ $avatarLetter = strtoupper(substr(CURRENT_USER, 0, 1));
 <script src="../assets/js/bootstrap.bundle.min.js"></script>
 <!-- jQuery + Chart.js -->
 <script src="../assets/js/jquery-4.0.0.min.js"></script>
+
 <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.min.js"></script>
 <!-- Your dashboard JS -->
+<script src="../assets/js/mobile_toggle.js"></script>
 <script src="../js/admin/admin_dashboard.js"></script>
 
-<script>
-  // ── Today's date ──
-  document.getElementById('todayDate').textContent =
-    new Date().toLocaleDateString('en-PH', { weekday:'long', year:'numeric', month:'long', day:'numeric' });
 
-  // ── Mobile sidebar toggle ──
-  document.getElementById('menuToggle').addEventListener('click', function () {
-    document.getElementById('sidebar').classList.toggle('sb-open');
-  });
-
-  // ── Avatar dropdown toggle ──
-  function toggleAvatarDropdown(e) {
-    e.stopPropagation();
-    document.getElementById('avatarDropdown').classList.toggle('show');
-  }
-
-  // Close dropdown when clicking outside
-  document.addEventListener('click', function () {
-    document.getElementById('avatarDropdown').classList.remove('show');
-  });
-
-  // Prevent dropdown from closing when clicking inside it
-  document.getElementById('avatarDropdown').addEventListener('click', function (e) {
-    e.stopPropagation();
-  });
-</script>
 
 </body>
 </html>

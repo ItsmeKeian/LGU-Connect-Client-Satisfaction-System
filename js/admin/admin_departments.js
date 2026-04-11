@@ -1,42 +1,25 @@
-// ── Base URL for feedback form (adjust to your actual domain) ──
+// ============================================================
+// admin_departments.js — Departments page ONLY
+// ============================================================
+
 const BASE_URL = window.location.origin + '/lgu-connect/feedback.php?dept=';
 
-// ── Department color map ──
 const DEPT_COLORS = [
   '#B5121B','#1565c0','#2e7d32','#e65100',
   '#6a1b9a','#00838f','#f9a825','#4e342e',
   '#37474f','#ad1457'
 ];
 
-// ── Modals ──
+// Modals
 const deptModal   = new bootstrap.Modal(document.getElementById('deptModal'));
 const qrModal     = new bootstrap.Modal(document.getElementById('qrModal'));
 const deleteModal = new bootstrap.Modal(document.getElementById('deleteModal'));
 let deleteTargetId = null;
 
-// ── Today's date ──
-document.getElementById('todayDate').textContent =
-  new Date().toLocaleDateString('en-PH', {weekday:'long',year:'numeric',month:'long',day:'numeric'});
-
-// ── Mobile sidebar ──
-document.getElementById('menuToggle').addEventListener('click', () => {
-  document.getElementById('sidebar').classList.toggle('sb-open');
-});
-
-// ── Avatar dropdown ──
-function toggleAvatarDropdown(e) {
-  e.stopPropagation();
-  document.getElementById('avatarDropdown').classList.toggle('show');
-}
-document.addEventListener('click', () => {
-  document.getElementById('avatarDropdown').classList.remove('show');
-});
-document.getElementById('avatarDropdown').addEventListener('click', e => e.stopPropagation());
-
-// ── Refresh button ──
+// Refresh button
 document.getElementById('refreshBtn').addEventListener('click', loadDepartments);
 
-// ── Search ──
+// Search
 document.getElementById('deptSearch').addEventListener('input', function() {
   const q = this.value.toLowerCase();
   document.querySelectorAll('.dept-card').forEach(card => {
@@ -47,7 +30,7 @@ document.getElementById('deptSearch').addEventListener('input', function() {
   });
 });
 
-// ── Load departments via AJAX ──
+// ── Load departments ──
 function loadDepartments() {
   $('#deptGrid').html(`
     <div class="empty-state">
@@ -60,7 +43,8 @@ function loadDepartments() {
       $('#deptGrid').html(`
         <div class="empty-state">
           <i class="bi bi-building-x"></i>
-          <p>No departments found.<br>Click <strong>Add Department</strong> to get started.</p>
+          <p>No departments found.<br>
+          Click <strong>Add Department</strong> to get started.</p>
         </div>`);
       updateSummary([]);
       return;
@@ -70,18 +54,18 @@ function loadDepartments() {
   }).fail(() => showToast('Failed to load departments.', 'danger'));
 }
 
-// ── Render department cards ──
+// ── Render cards ──
 function renderCards(depts) {
   let html = '';
   depts.forEach((d, i) => {
-    const color    = DEPT_COLORS[i % DEPT_COLORS.length];
-    const rating   = parseFloat(d.avg_rating) || 0;
-    const ratingW  = (rating / 5 * 100).toFixed(1);
-    const stars    = '★'.repeat(Math.round(rating)) + '☆'.repeat(5 - Math.round(rating));
-    const statusCls = d.status === 'active' ? 'active' : 'inactive';
-    const statusLbl = d.status === 'active' ? 'Active' : 'Inactive';
+    const color      = DEPT_COLORS[i % DEPT_COLORS.length];
+    const rating     = parseFloat(d.avg_rating) || 0;
+    const ratingW    = (rating / 5 * 100).toFixed(1);
+    const stars      = '★'.repeat(Math.round(rating)) + '☆'.repeat(5 - Math.round(rating));
+    const statusCls  = d.status === 'active' ? 'active' : 'inactive';
+    const statusLbl  = d.status === 'active' ? 'Active' : 'Inactive';
     const satisfaction = rating >= 4 ? 'Satisfied' : rating >= 3 ? 'Moderate' : 'Needs Improvement';
-    const satColor = rating >= 4 ? '#2e7d32' : rating >= 3 ? '#e65100' : '#B5121B';
+    const satColor   = rating >= 4 ? '#2e7d32' : rating >= 3 ? '#e65100' : '#B5121B';
 
     html += `
     <div class="dept-card-wrapper">
@@ -97,7 +81,7 @@ function renderCards(depts) {
                 onclick="openEditModal(${JSON.stringify(d).replace(/'/g,'&#39;')})">
                 <i class="bi bi-pencil"></i>
               </button>
-              <button class="dept-action-btn qr" title="View QR Code"
+              <button class="dept-action-btn qr" title="QR Code"
                 onclick="openQrModal('${d.code}','${d.name}')">
                 <i class="bi bi-qr-code"></i>
               </button>
@@ -107,11 +91,9 @@ function renderCards(depts) {
               </button>
             </div>
           </div>
-
           <div class="dept-name">${d.name}</div>
-          <div class="dept-code" style="color:${color}; font-weight:600; font-size:0.72rem;">${d.code}</div>
+          <div class="dept-code" style="color:${color};font-weight:600;font-size:0.72rem;">${d.code}</div>
           ${d.head ? `<div class="dept-code mt-1"><i class="bi bi-person me-1"></i>${d.head}</div>` : ''}
-
           <div class="dept-stats">
             <div class="dept-stat">
               <div class="dept-stat-val" style="color:${color};">${d.feedback_count ?? 0}</div>
@@ -122,17 +104,19 @@ function renderCards(depts) {
               <div class="dept-stat-label">Avg Rating</div>
             </div>
             <div class="dept-stat">
-              <div class="dept-stat-val" style="color:${satColor};font-size:0.7rem;">${rating > 0 ? satisfaction : '—'}</div>
-              <div class="dept-stat-label">Status</div>
+              <div class="dept-stat-val" style="color:${satColor};font-size:0.7rem;">
+                ${rating > 0 ? satisfaction : '—'}
+              </div>
+              <div class="dept-stat-label">Satisfaction</div>
             </div>
           </div>
-
           <div class="dept-rating-bar">
-            <div class="dept-rating-fill" style="width:${ratingW}%;background:linear-gradient(to right,${color},#F0C030);"></div>
+            <div class="dept-rating-fill"
+                 style="width:${ratingW}%;background:linear-gradient(to right,${color},#F0C030);">
+            </div>
           </div>
           <div style="font-size:0.72rem;color:#C8991A;letter-spacing:1px;">${stars}</div>
         </div>
-
         <div class="dept-card-foot">
           <span class="dept-status ${statusCls}">
             <span class="sdot"></span> ${statusLbl}
@@ -147,12 +131,12 @@ function renderCards(depts) {
   $('#deptGrid').html(html);
 }
 
-// ── Update summary cards ──
+// ── Summary cards ──
 function updateSummary(depts) {
-  const total    = depts.length;
-  const active   = depts.filter(d => d.status === 'active').length;
-  const totalFB  = depts.reduce((s, d) => s + (parseInt(d.feedback_count) || 0), 0);
-  const avgR     = depts.length
+  const total   = depts.length;
+  const active  = depts.filter(d => d.status === 'active').length;
+  const totalFB = depts.reduce((s,d) => s + (parseInt(d.feedback_count)||0), 0);
+  const avgR    = depts.length
     ? (depts.reduce((s,d) => s + (parseFloat(d.avg_rating)||0), 0) / depts.length).toFixed(2)
     : '—';
 
@@ -162,20 +146,18 @@ function updateSummary(depts) {
   $('#sumTotalFeedback').text(totalFB);
 }
 
-// ── Add department modal ──
+// ── Add modal ──
 function openAddModal() {
   document.getElementById('deptModalTitle').innerHTML =
     '<i class="bi bi-building-add me-2"></i> Add New Department';
-  document.getElementById('deptEditId').value = '';
-  document.getElementById('deptName').value   = '';
-  document.getElementById('deptCode').value   = '';
+  ['deptEditId','deptName','deptCode','deptDesc','deptHead'].forEach(id => {
+    document.getElementById(id).value = '';
+  });
   document.getElementById('deptStatus').value = 'active';
-  document.getElementById('deptDesc').value   = '';
-  document.getElementById('deptHead').value   = '';
   deptModal.show();
 }
 
-// ── Edit department modal ──
+// ── Edit modal ──
 function openEditModal(d) {
   document.getElementById('deptModalTitle').innerHTML =
     '<i class="bi bi-pencil-square me-2"></i> Edit Department';
@@ -188,7 +170,7 @@ function openEditModal(d) {
   deptModal.show();
 }
 
-// ── Save department (add or edit) ──
+// ── Save (add/edit) ──
 function saveDepartment() {
   const id   = document.getElementById('deptEditId').value;
   const name = document.getElementById('deptName').value.trim();
@@ -200,9 +182,7 @@ function saveDepartment() {
   }
 
   const payload = {
-    id:          id,
-    name:        name,
-    code:        code,
+    id, name, code,
     status:      document.getElementById('deptStatus').value,
     description: document.getElementById('deptDesc').value.trim(),
     head:        document.getElementById('deptHead').value.trim(),
@@ -220,16 +200,16 @@ function saveDepartment() {
       showToast(res.message, 'success');
       loadDepartments();
     } else {
-      showToast(res.message || 'Error saving department.', 'danger');
+      showToast(res.message || 'Error saving.', 'danger');
     }
   }).fail(() => {
     btn.disabled = false;
     btn.innerHTML = '<i class="bi bi-check-lg me-1"></i> Save Department';
-    showToast('Server error. Please try again.', 'danger');
+    showToast('Server error. Try again.', 'danger');
   });
 }
 
-// ── Delete modal ──
+// ── Delete ──
 function openDeleteModal(id, name) {
   deleteTargetId = id;
   document.getElementById('deleteConfirmName').textContent = name;
@@ -255,33 +235,32 @@ function confirmDelete() {
   });
 }
 
-// ── QR Code modal ──
+// ── QR Code ──
 function openQrModal(code, name) {
-  const link = BASE_URL + encodeURIComponent(code);
+  const link  = BASE_URL + encodeURIComponent(code);
   const qrSrc = `https://api.qrserver.com/v1/create-qr-code/?size=180x180&data=${encodeURIComponent(link)}`;
-
   document.getElementById('qrDeptName').textContent = name;
-  document.getElementById('qrLink').textContent      = link;
-  document.getElementById('qrImage').src             = qrSrc;
-  document.getElementById('qrDownloadBtn').href      = qrSrc;
-  document.getElementById('qrDownloadBtn').download  = `QR_${code}.png`;
+  document.getElementById('qrLink').textContent     = link;
+  document.getElementById('qrImage').src            = qrSrc;
+  document.getElementById('qrDownloadBtn').href     = qrSrc;
+  document.getElementById('qrDownloadBtn').download = `QR_${code}.png`;
   qrModal.show();
 }
 
 function copyQrLink() {
   const link = document.getElementById('qrLink').textContent;
-  navigator.clipboard.writeText(link).then(() => showToast('Link copied to clipboard!', 'success'));
+  navigator.clipboard.writeText(link)
+    .then(() => showToast('Link copied!', 'success'));
 }
 
-// ── Toast helper ──
+// ── Toast ──
 function showToast(msg, type = 'success') {
-  const toastEl = document.getElementById('toastMsg');
-  const toastTx = document.getElementById('toastText');
-  toastEl.className = `toast align-items-center border-0 text-white bg-${type === 'success' ? 'success' : 'danger'}`;
-  toastTx.textContent = msg;
-  const t = new bootstrap.Toast(toastEl, {delay: 3000});
-  t.show();
+  const el = document.getElementById('toastMsg');
+  const tx = document.getElementById('toastText');
+  el.className = `toast align-items-center border-0 text-white bg-${type === 'success' ? 'success' : 'danger'}`;
+  tx.textContent = msg;
+  new bootstrap.Toast(el, {delay: 3000}).show();
 }
 
-// ── Initial load ──
+// ── Init ──
 loadDepartments();

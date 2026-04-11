@@ -450,3 +450,18 @@ html, body {
   .tb-search { width: 160px; }
   .tb-search:focus { width: 180px; }
 }
+
+
+/* ── Sidebar overlay (mobile) ── */
+#sidebarOverlay {
+  display: none;
+  position: fixed;
+  inset: 0;                        /* top/right/bottom/left: 0 */
+  background: rgba(0, 0, 0, 0.45);
+  z-index: 99;                     /* below sidebar (z-index:100) */
+  transition: opacity 0.22s ease;
+}
+
+#sidebarOverlay.active {
+  display: block;
+}
