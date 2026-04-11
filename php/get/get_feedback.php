@@ -112,15 +112,15 @@ try {
     $total = (int)$countStmt->fetchColumn();
 
     // ── Paginated data ──
+   
     $dataStmt = $conn->prepare("
-        SELECT f.*
-        FROM feedback f
-        WHERE {$whereStr}
-        ORDER BY f.submitted_at DESC
-        LIMIT ? OFFSET ?
+    SELECT f.*
+    FROM feedback f
+    WHERE {$whereStr}
+    ORDER BY f.submitted_at DESC
+    LIMIT {$perPage} OFFSET {$offset}
     ");
-    $dataParams   = array_merge($params, [$perPage, $offset]);
-    $dataStmt->execute($dataParams);
+    $dataStmt->execute($params);
     $feedback = $dataStmt->fetchAll(PDO::FETCH_ASSOC);
 
     echo json_encode([
