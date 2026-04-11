@@ -18,7 +18,7 @@ $avatarLetter = strtoupper(substr(CURRENT_USER, 0, 1));
 <link href="../assets/css/bootstrap.min.css" rel="stylesheet">
 <link href="../assets/css/all.min.css" rel="stylesheet">
 <link rel="stylesheet" href="../assets/css/bootstrap-icons.min.css"/>
-<link rel="stylesheet" href="../assets/css/dashboard.css"/>
+<link rel="stylesheet" href="../assets/css/sidebar_header.css"/>
 
 <style>
   /* ── Avatar Dropdown ── */
