@@ -21,7 +21,8 @@ $dept = CURRENT_DEPT; // e.g. "MSWD"
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="icon" href="../assets/img/logo.png" type="image/x-icon">
 <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=Playfair+Display:wght@700&display=swap" rel="stylesheet">
-<link rel="stylesheet" href="../assets/css/dashboard.css"/>
+<link rel="stylesheet" href="../assets/css/sidebar_header.css"/>
+<link rel="stylesheet" href="../assets/css/admin_dashboard.css"/>
 </head>
 <body>
 <div class="app-shell">
