@@ -88,7 +88,7 @@ function loadFeedback(filters = {}, page = 1) {
     $('#sumAvg').text(res.summary.avg_rating ? parseFloat(res.summary.avg_rating).toFixed(2) : '—');
     $('#sumSatisfied').text(res.summary.satisfied ?? 0);
     $('#sumToday').text(res.summary.today ?? 0);
-    $('#sbFeedbackCount').text(res.summary.total ?? 0);
+
 
     allFeedback = res.data;
 

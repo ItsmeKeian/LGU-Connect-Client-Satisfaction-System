@@ -423,6 +423,7 @@ $avatarLetter = strtoupper(substr(CURRENT_USER, 0, 1));
 
 <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.min.js"></script>
 <!-- Your dashboard JS -->
+<script src="../js/admin/admin_sidebarcount.js"></script>
 <script src="../assets/js/mobile_toggle.js"></script>
 <script src="../js/admin/admin_dashboard.js"></script>
 
