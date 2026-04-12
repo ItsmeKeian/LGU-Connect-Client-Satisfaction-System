@@ -1,5 +1,5 @@
 <?php
-// php/get/get_departments.php
+
 require "../auth_check.php";
 require "../dbconnect.php";
 header('Content-Type: application/json');

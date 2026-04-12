@@ -1,5 +1,5 @@
 <?php
-// php/ajax/save_department.php
+
 require "../auth_check.php";
 require "../dbconnect.php";
 header('Content-Type: application/json');

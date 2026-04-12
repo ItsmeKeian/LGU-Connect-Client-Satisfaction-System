@@ -2,12 +2,8 @@
 // admin/admin_dashboard.php
 require "../php/auth_check.php";
 
-if (IS_DEPT_USER) {
-    header("Location: ../department/dept_dashboard.php");
-    exit();
-}
+requireSuperAdmin(); // ✅ handles redirect + exit na internally
 
-// Get first letter of name for avatar
 $avatarLetter = strtoupper(substr(CURRENT_USER, 0, 1));
 ?>
 <!DOCTYPE html>
