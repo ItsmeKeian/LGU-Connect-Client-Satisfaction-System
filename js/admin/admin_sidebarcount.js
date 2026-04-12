@@ -17,3 +17,15 @@ $(document).ready(function () {
   // Optional: auto-refresh every 60 seconds
   setInterval(loadSidebarCounts, 60000);
 });
+
+
+// ── Live Bar Date (runs on all pages) ──
+(function () {
+  const el = document.getElementById('todayDate');
+  if (el) {
+    el.textContent = new Date().toLocaleDateString('en-PH', {
+      weekday: 'long', year: 'numeric',
+      month: 'long',   day: 'numeric'
+    });
+  }
+})();

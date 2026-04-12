@@ -71,7 +71,7 @@ $avatarLetter = strtoupper(substr(CURRENT_USER, 0, 1));
     </ul>
     <div class="sb-section">System</div>
     <ul class="sb-nav">
-      <li><a href="users.php">
+      <li><a href="admin_manage_users.php">
         <span class="nav-icon"><i class="bi bi-people"></i></span> Manage Users
       </a></li>
       <li><a href="qrcodes.php">
