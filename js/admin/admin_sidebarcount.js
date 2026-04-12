@@ -1,15 +1,19 @@
-// sidebar_counts.js — include this on ALL admin pages
 function loadSidebarCounts() {
-    $.get('../php/get/get_feedback.php', { page: 1, per_page: 1 }, function(res) {
-      if (res.success && res.summary) {
-        const count = res.summary.total ?? 0;
-        const badge = document.getElementById('sbFeedbackCount');
-        if (badge) badge.textContent = count;
-      }
-    });
-  }
-  
-  // Run on page load
-  $(document).ready(function () {
-    loadSidebarCounts();
+  $.get('../php/get/get_counts.php', function(res) {
+    if (!res.success) return;
+
+    const badge = document.getElementById('sbFeedbackCount');
+    if (badge) badge.textContent = res.feedback_total;
+
+    // You can add more badges here later
+    // e.g., const todayBadge = document.getElementById('sbTodayCount');
+    // if (todayBadge) todayBadge.textContent = res.feedback_today;
   });
+}
+
+$(document).ready(function () {
+  loadSidebarCounts();
+
+  // Optional: auto-refresh every 60 seconds
+  setInterval(loadSidebarCounts, 60000);
+});
