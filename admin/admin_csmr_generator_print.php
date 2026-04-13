@@ -1,10 +1,4 @@
 <?php
-/**
- * LOCATION: admin/admin_csmr_generator_print.php
- *
- * DB variable: $conn  (confirmed from dbconnect.php)
- * JOIN:        feedback.department_code = departments.code
- */
 require "../php/auth_check.php";
 require "../php/dbconnect.php";   // provides $conn
 requireSuperAdmin();

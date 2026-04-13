@@ -1,15 +1,4 @@
 <?php
-/**
- * LOCATION: php/get/get_csmr_data.php
- *
- * Schema confirmed:
- *   feedback:    id, department_code (varchar), rating, sqd0-sqd8,
- *                comment, suggestions, respondent_type, sex, age_group, submitted_at
- *   departments: id, name, code (varchar UNIQUE), description, head, status
- *   JOIN key:    feedback.department_code = departments.code
- *   DB variable: $conn  (NOT $pdo)
- */
-
 require "../auth_check.php";
 require "../dbconnect.php";   // provides $conn
 requireSuperAdmin();
