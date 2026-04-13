@@ -1,9 +1,7 @@
 <?php
 require "../php/auth_check.php";
-if (IS_DEPT_USER) {
-    header("Location: ../department/dept_dashboard.php");
-    exit();
-}
+requireSuperAdmin();
+
 $avatarLetter = strtoupper(substr(CURRENT_USER, 0, 1));
 ?>
 <!DOCTYPE html>

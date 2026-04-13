@@ -1,15 +1,4 @@
-<?php
-session_start();
 
-if (isset($_SESSION['user_id'])) {
-    header("Location: " . (
-        $_SESSION['role'] === 'superadmin'
-        ? "../admin/admin_dashboard.php"
-        : "../department/dept_dashboard.php"
-    ));
-    exit();
-}
-?>
 <!DOCTYPE html>
 <html lang="en">
 <head>

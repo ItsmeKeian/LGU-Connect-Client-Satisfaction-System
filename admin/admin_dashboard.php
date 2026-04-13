@@ -1,8 +1,7 @@
 <?php
-// admin/admin_dashboard.php
 require "../php/auth_check.php";
 
-requireSuperAdmin(); // ✅ handles redirect + exit na internally
+requireSuperAdmin();
 
 $avatarLetter = strtoupper(substr(CURRENT_USER, 0, 1));
 ?>
