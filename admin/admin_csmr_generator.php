@@ -13,6 +13,7 @@ $avatarLetter = strtoupper(substr(CURRENT_USER, 0, 1));
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
 <link href="../assets/css/bootstrap.min.css" rel="stylesheet">
+<link href="../assets/css/all.min.css" rel="stylesheet">
 <link rel="stylesheet" href="../assets/css/bootstrap-icons.min.css"/>
 <link rel="stylesheet" href="../assets/css/sidebar_header.css"/>
 <style>
@@ -223,19 +224,32 @@ $avatarLetter = strtoupper(substr(CURRENT_USER, 0, 1));
 
             <div class="filter-group">
               <label><i class="bi bi-list-check" style="margin-right:4px"></i> Include in Report</label>
-              <div style="display:flex;flex-direction:column;gap:8px;margin-top:4px">
+              <div style="display:flex;flex-direction:column;gap:10px;margin-top:4px">
+
                 <label style="display:flex;align-items:center;gap:8px;font-size:13px;text-transform:none;letter-spacing:0;color:#444;font-weight:400;">
-                  <input type="checkbox" id="inclDeptBreakdown" checked style="width:14px;height:14px;accent-color:var(--red-main)"/> Department Breakdown
+                  <input type="checkbox" id="inclDeptBreakdown" checked style="width:14px;height:14px;accent-color:var(--red-main)"/>
+                  <span><i class="bi bi-building" style="color:var(--red-main);font-size:12px;margin-right:3px"></i> Department Breakdown</span>
                 </label>
+
                 <label style="display:flex;align-items:center;gap:8px;font-size:13px;text-transform:none;letter-spacing:0;color:#444;font-weight:400;">
-                  <input type="checkbox" id="inclComments" checked style="width:14px;height:14px;accent-color:var(--red-main)"/> Citizen Comments
+                  <input type="checkbox" id="inclCharts" checked style="width:14px;height:14px;accent-color:var(--red-main)"/>
+                  <span><i class="bi bi-bar-chart-fill" style="color:var(--red-main);font-size:12px;margin-right:3px"></i> Charts &amp; Graphs <span style="font-size:11px;color:#aaa">(preview + print)</span></span>
                 </label>
-                <label style="display:flex;align-items:center;gap:8px;font-size:13px;text-transform:none;letter-spacing:0;color:#444;font-weight:400;">
-                  <input type="checkbox" id="inclCharts" checked style="width:14px;height:14px;accent-color:var(--red-main)"/> Charts &amp; Graphs
-                </label>
-                <label style="display:flex;align-items:center;gap:8px;font-size:13px;text-transform:none;letter-spacing:0;color:#444;font-weight:400;">
-                  <input type="checkbox" id="inclRawFeedback" style="width:14px;height:14px;accent-color:var(--red-main)"/> Raw Feedback Table
-                </label>
+
+                <div>
+                  <label style="display:flex;align-items:center;gap:8px;font-size:13px;text-transform:none;letter-spacing:0;color:#444;font-weight:400;">
+                    <input type="checkbox" id="inclRawFeedback" style="width:14px;height:14px;accent-color:var(--red-main)" onchange="toggleRawSubOptions()"/>
+                    <span><i class="bi bi-table" style="color:var(--red-main);font-size:12px;margin-right:3px"></i> Raw Feedback Table</span>
+                  </label>
+                  <!-- Sub-options: only active when Raw Feedback is checked -->
+                  <div id="rawSubOptions" style="margin-left:22px;margin-top:7px;display:flex;flex-direction:column;gap:6px;opacity:0.35;pointer-events:none;transition:opacity 0.2s">
+                    <label style="display:flex;align-items:center;gap:7px;font-size:12px;text-transform:none;letter-spacing:0;color:#555;font-weight:400;cursor:not-allowed">
+                      <input type="checkbox" id="inclComments" checked style="width:13px;height:13px;accent-color:var(--red-main)"/>
+                      <i class="bi bi-chat-left-text" style="color:#999;font-size:11px"></i> Show Comments &amp; Suggestions column
+                    </label>
+                  </div>
+                </div>
+
               </div>
             </div>
 
@@ -301,6 +315,32 @@ $avatarLetter = strtoupper(substr(CURRENT_USER, 0, 1));
             </div>
 
             <div class="dept-summary-grid" id="deptSummaryGrid"></div>
+
+            <!-- Charts Section -->
+            <div id="chartsSection" style="display:none;padding:20px 22px;border-top:1px solid #f0f0f0">
+              <div style="font-size:13px;font-weight:600;color:#333;margin-bottom:16px;display:flex;align-items:center;gap:8px">
+                <i class="bi bi-bar-chart-fill" style="color:var(--red-main)"></i> Charts &amp; Graphs
+              </div>
+              <div style="display:grid;grid-template-columns:1fr 1fr;gap:20px">
+                <!-- Rating Distribution Bar Chart -->
+                <div style="background:#fafafa;border:1px solid #efefef;border-radius:8px;padding:16px">
+                  <div style="font-size:12px;font-weight:600;color:#555;margin-bottom:12px;text-transform:uppercase;letter-spacing:.05em">
+                    Rating Distribution
+                  </div>
+                  <div id="chartRatingBars"></div>
+                </div>
+                <!-- Department Satisfaction Chart -->
+                <div style="background:#fafafa;border:1px solid #efefef;border-radius:8px;padding:16px">
+                  <div style="font-size:12px;font-weight:600;color:#555;margin-bottom:12px;text-transform:uppercase;letter-spacing:.05em">
+                    Satisfaction by Department
+                  </div>
+                  <div id="chartDeptSat"></div>
+                </div>
+              </div>
+            </div>
+
+            <!-- Comments Section -->
+            <div id="commentsSection" style="display:none;border-top:1px solid #f0f0f0"></div>
 
             <div class="results-table-wrapper" id="resultsTableWrapper">
               <table class="results-table">
@@ -436,6 +476,7 @@ function generateReport() {
   const dateTo   = document.getElementById('filterDateTo').value;
   const inclDept = document.getElementById('inclDeptBreakdown').checked ? 1 : 0;
   const inclComm = document.getElementById('inclComments').checked ? 1 : 0;
+  const inclCharts = document.getElementById('inclCharts').checked ? 1 : 0;
   const inclRaw  = document.getElementById('inclRawFeedback').checked ? 1 : 0;
 
   // Loading state
@@ -458,7 +499,7 @@ function generateReport() {
         resetPreview(); return;
       }
       lastReportData = res;
-      renderPreview(res, { inclDept, inclComm, inclRaw });
+      renderPreview(res, { inclDept, inclComm, inclRaw, inclCharts });
       document.getElementById('printBtn').style.display = 'flex';
     },
     error(xhr) {
@@ -474,14 +515,25 @@ function generateReport() {
   });
 }
 
+// ── Toggle Raw Feedback sub-options ──
+function toggleRawSubOptions() {
+  const checked = document.getElementById('inclRawFeedback').checked;
+  const sub     = document.getElementById('rawSubOptions');
+  sub.style.opacity       = checked ? '1'    : '0.35';
+  sub.style.pointerEvents = checked ? 'auto' : 'none';
+}
+
 function resetPreview() {
-  document.getElementById('spinnerWrap').style.display = 'none';
-  document.getElementById('emptyState').style.display  = 'flex';
+  document.getElementById('spinnerWrap').style.display    = 'none';
+  document.getElementById('emptyState').style.display     = 'flex';
+  document.getElementById('chartsSection').style.display  = 'none';
+  document.getElementById('commentsSection').style.display= 'none';
 }
 
 function renderPreview(res, opts) {
   const { summary, departments, feedbacks } = res;
 
+  // ── Stat cards ──
   document.getElementById('statTotal').textContent       = summary.total_responses;
   document.getElementById('statSat').textContent         = summary.satisfaction_rate + '%';
   document.getElementById('statAvgRating').textContent   = parseFloat(summary.avg_rating).toFixed(1);
@@ -491,6 +543,7 @@ function renderPreview(res, opts) {
   document.getElementById('periodBadgeText').textContent = summary.period_label;
   document.getElementById('headerActions').style.display = 'flex';
 
+  // ── Department breakdown ──
   if (opts.inclDept && departments && departments.length > 0) {
     const grid = document.getElementById('deptSummaryGrid');
     grid.innerHTML = '';
@@ -516,13 +569,25 @@ function renderPreview(res, opts) {
     grid.style.display = 'grid';
   }
 
+  // ── Charts & Graphs ──
+  if (opts.inclCharts) {
+    renderCharts(summary, departments);
+    document.getElementById('chartsSection').style.display = 'block';
+  } else {
+    document.getElementById('chartsSection').style.display = 'none';
+  }
+
+  // ── Raw Feedback Table ──
   if (opts.inclRaw && feedbacks && feedbacks.length > 0) {
-    const tbody = document.getElementById('resultsTableBody');
+    const inclComm = document.getElementById('inclComments').checked;
+    const tbody    = document.getElementById('resultsTableBody');
     tbody.innerHTML = '';
     feedbacks.forEach((f, idx) => {
       const ri  = getRatingInfo(f.rating);
       const pct = (f.rating / 5 * 100).toFixed(0);
-      const cmt = opts.inclComm ? escHtml(f.comment || '—') : '<span style="color:#ccc">Hidden</span>';
+      const cmt = inclComm
+        ? escHtml(f.comment || '—')
+        : '<span style="color:#ccc;font-size:11px">Hidden</span>';
       tbody.innerHTML += `
         <tr>
           <td style="color:#aaa;font-size:12px">${idx+1}</td>
@@ -540,6 +605,60 @@ function renderPreview(res, opts) {
         </tr>`;
     });
     document.getElementById('resultsTableWrapper').style.display = 'block';
+  }
+}
+
+// ── Chart rendering (pure CSS/HTML — no external library needed) ──
+function renderCharts(summary, departments) {
+  const total = parseInt(summary.total_responses) || 1;
+
+  // Chart 1: Rating Distribution horizontal bars
+  const ratings = [
+    { label:'Excellent (5)', count: parseInt(summary.cnt_5||0), color:'#1e7c3b' },
+    { label:'Good (4)',      count: parseInt(summary.cnt_4||0), color:'#1a6fbf' },
+    { label:'Average (3)',   count: parseInt(summary.cnt_3||0), color:'#b06c10' },
+    { label:'Poor (2)',      count: parseInt(summary.cnt_2||0), color:'#c0392b' },
+    { label:'Very Poor (1)',count: parseInt(summary.cnt_1||0), color:'#922b21' },
+  ];
+  let ratingHTML = '';
+  ratings.forEach(r => {
+    const pct = Math.round(r.count / total * 100);
+    ratingHTML += `
+      <div style="margin-bottom:10px">
+        <div style="display:flex;justify-content:space-between;font-size:11px;color:#555;margin-bottom:3px">
+          <span>${r.label}</span>
+          <span style="font-weight:600;color:${r.color}">${r.count} <span style="color:#aaa;font-weight:400">(${pct}%)</span></span>
+        </div>
+        <div style="height:10px;background:#f0f0f0;border-radius:5px;overflow:hidden">
+          <div style="height:100%;width:${pct}%;background:${r.color};border-radius:5px;transition:width .6s ease"></div>
+        </div>
+      </div>`;
+  });
+  document.getElementById('chartRatingBars').innerHTML = ratingHTML;
+
+  // Chart 2: Department satisfaction horizontal bars
+  if (departments && departments.length > 0) {
+    let deptHTML = '';
+    departments.forEach(d => {
+      const sat   = parseFloat(d.satisfaction_rate) || 0;
+      const color = sat >= 80 ? '#1e7c3b' : sat >= 60 ? '#1a6fbf' : sat >= 40 ? '#b06c10' : '#c0392b';
+      // Truncate long dept names
+      const name  = d.dept_name.length > 28 ? d.dept_name.substring(0,26)+'…' : d.dept_name;
+      deptHTML += `
+        <div style="margin-bottom:10px">
+          <div style="display:flex;justify-content:space-between;font-size:11px;color:#555;margin-bottom:3px">
+            <span title="${escHtml(d.dept_name)}">${escHtml(name)}</span>
+            <span style="font-weight:600;color:${color}">${sat}%</span>
+          </div>
+          <div style="height:10px;background:#f0f0f0;border-radius:5px;overflow:hidden">
+            <div style="height:100%;width:${sat}%;background:${color};border-radius:5px;transition:width .6s ease"></div>
+          </div>
+        </div>`;
+    });
+    document.getElementById('chartDeptSat').innerHTML = deptHTML;
+  } else {
+    document.getElementById('chartDeptSat').innerHTML =
+      '<p style="font-size:12px;color:#aaa;text-align:center;padding:20px 0">Check "Department Breakdown" to see this chart</p>';
   }
 }
 
