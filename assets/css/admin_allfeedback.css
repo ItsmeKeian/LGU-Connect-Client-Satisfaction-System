@@ -205,3 +205,60 @@
  @media (max-width:600px) {
    .summary-cards { grid-template-columns:1fr; }
  }
+
+
+ /* ── Per-page selector ── */
+.per-page-wrap {
+  display: flex;
+  align-items: center;
+  gap: 7px;
+  font-size: 12px;
+  color: #888;
+}
+.per-page-wrap select {
+  padding: 4px 8px;
+  font-size: 12px;
+  border: 1px solid #ddd;
+  border-radius: 6px;
+  background: #fff;
+  color: #333;
+  cursor: pointer;
+}
+.per-page-wrap select:focus {
+  outline: none;
+  border-color: #B5121B;
+}
+
+/* ── Pagination improvements ── */
+.pagination-wrap {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 14px 20px;
+  border-top: 1px solid #f0f0f0;
+  flex-wrap: wrap;
+  gap: 10px;
+}
+.pagination-info {
+  font-size: 12.5px;
+  color: #888;
+}
+.page-link {
+  color: #B5121B;
+  border-color: #f0f0f0;
+  font-size: 13px;
+  padding: 5px 11px;
+}
+.page-item.active .page-link {
+  background-color: #B5121B;
+  border-color: #B5121B;
+  color: #fff;
+}
+.page-link:hover {
+  color: #8B0000;
+  background: #fdf0f0;
+  border-color: #e8c4c4;
+}
+.page-item.disabled .page-link {
+  color: #ccc;
+}
