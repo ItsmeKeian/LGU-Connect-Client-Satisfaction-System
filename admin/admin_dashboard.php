@@ -1,8 +1,6 @@
 <?php
 require "../php/auth_check.php";
-
 requireSuperAdmin();
-
 $avatarLetter = strtoupper(substr(CURRENT_USER, 0, 1));
 ?>
 <!DOCTYPE html>
@@ -10,25 +8,20 @@ $avatarLetter = strtoupper(substr(CURRENT_USER, 0, 1));
 <head>
 <meta charset="UTF-8"/>
 <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
-<title>LGU-Connect | Municipality of San Julian</title>
+<title>Dashboard | LGU-Connect</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="icon" href="../assets/img/logo.png" type="image/x-icon">
 <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=Playfair+Display:wght@700&display=swap" rel="stylesheet">
-
-
 <link rel="stylesheet" href="../assets/css/bootstrap.min.css"/>
 <link rel="stylesheet" href="../assets/css/bootstrap-icons.min.css"/>
-<link rel="stylesheet" href="../assets/css/sidebar_header.css"/>   
-<link rel="stylesheet" href="../assets/css/admin_dashboard.css"/> 
-
-
+<link rel="stylesheet" href="../assets/css/sidebar_header.css"/>
+<link rel="stylesheet" href="../assets/css/admin_dashboard.css"/>
 </head>
 <body>
 <div class="app-shell">
 
-  <!-- ══════════════ SIDEBAR (pure CSS — unchanged) ══════════════ -->
+  <!-- ══════════════ SIDEBAR ══════════════ -->
   <aside class="sidebar" id="sidebar">
-
     <div class="sb-brand">
       <img src="../assets/img/logo.png" class="sb-logo-img" alt="Logo"
            onerror="this.style.display='none';this.nextElementSibling.style.display='flex'"/>
@@ -38,8 +31,6 @@ $avatarLetter = strtoupper(substr(CURRENT_USER, 0, 1));
         <div class="sb-sub">San Julian, E. Samar</div>
       </div>
     </div>
-
-    <!-- Role badge — now PHP-populated -->
     <div class="sb-role">
       <div class="role-dot"></div>
       <div>
@@ -47,7 +38,6 @@ $avatarLetter = strtoupper(substr(CURRENT_USER, 0, 1));
         <div class="role-sub">Super Administrator</div>
       </div>
     </div>
-
     <div class="sb-section">Main</div>
     <ul class="sb-nav">
       <li><a href="admin_dashboard.php" class="active">
@@ -61,7 +51,6 @@ $avatarLetter = strtoupper(substr(CURRENT_USER, 0, 1));
         <span class="nav-badge" id="sbFeedbackCount">0</span>
       </a></li>
     </ul>
-
     <div class="sb-section">Reports</div>
     <ul class="sb-nav">
       <li><a href="admin_csmr_generator.php">
@@ -74,7 +63,6 @@ $avatarLetter = strtoupper(substr(CURRENT_USER, 0, 1));
         <span class="nav-icon"><i class="bi bi-download"></i></span> Export Data
       </a></li>
     </ul>
-
     <div class="sb-section">System</div>
     <ul class="sb-nav">
       <li><a href="admin_manage_users.php">
@@ -87,21 +75,17 @@ $avatarLetter = strtoupper(substr(CURRENT_USER, 0, 1));
         <span class="nav-icon"><i class="bi bi-gear"></i></span> Settings
       </a></li>
     </ul>
-
-    <!-- ✅ Logout in sidebar -->
     <div class="sb-footer">
       <a href="../php/logout.php" onclick="return confirm('Are you sure you want to sign out?')">
         <span class="nav-icon"><i class="bi bi-box-arrow-right"></i></span> Sign Out
       </a>
     </div>
-
   </aside>
-  <!-- ══════════════ /SIDEBAR ══════════════ -->
 
   <!-- ══════════════ MAIN AREA ══════════════ -->
   <div class="main-area">
 
-    <!-- ── Topbar (pure CSS — only avatar upgraded) ── -->
+    <!-- Topbar -->
     <div class="topbar">
       <button class="menu-toggle" id="menuToggle">&#9776;</button>
       <div class="topbar-title">
@@ -113,12 +97,12 @@ $avatarLetter = strtoupper(substr(CURRENT_USER, 0, 1));
           <span class="search-icon"><i class="bi bi-search"></i></span>
           <input type="text" class="tb-search" id="globalSearch" placeholder="Search departments..."/>
         </div>
-        <button class="tb-btn" id="refreshBtn"><i class="bi bi-arrow-clockwise"></i> Refresh</button>
-        <button class="tb-btn primary" onclick="location.href='csmr_generator.php'">
+        <button class="tb-btn" id="refreshBtn">
+          <i class="bi bi-arrow-clockwise"></i> Refresh
+        </button>
+        <button class="tb-btn primary" onclick="location.href='admin_csmr_generator.php'">
           <i class="bi bi-file-earmark-text"></i> Generate CSMR
         </button>
-
-        <!-- ✅ Clickable avatar with dropdown -->
         <div class="tb-avatar" id="topbarAvatar" onclick="toggleAvatarDropdown(event)">
           <?= $avatarLetter ?>
           <div class="avatar-dropdown" id="avatarDropdown">
@@ -127,27 +111,24 @@ $avatarLetter = strtoupper(substr(CURRENT_USER, 0, 1));
               <div class="av-role">Super Administrator</div>
             </div>
             <div class="av-menu">
-              <a href="settings.php" class="av-item">
+              <a href="admin_settings.php" class="av-item">
                 <i class="bi bi-person-circle"></i> My Profile
               </a>
-              <a href="settings.php" class="av-item">
+              <a href="admin_settings.php" class="av-item">
                 <i class="bi bi-gear"></i> Settings
               </a>
               <div class="av-divider"></div>
-              <a href="../php/logout.php"
-                 class="av-item danger"
+              <a href="../php/logout.php" class="av-item danger"
                  onclick="return confirm('Are you sure you want to sign out?')">
                 <i class="bi bi-box-arrow-right"></i> Sign Out
               </a>
             </div>
           </div>
         </div>
-
       </div>
     </div>
-    <!-- /topbar -->
 
-    <!-- ══════════════ PAGE CONTENT (Bootstrap) ══════════════ -->
+    <!-- PAGE CONTENT -->
     <div class="page-content">
 
       <!-- Live bar -->
@@ -159,33 +140,26 @@ $avatarLetter = strtoupper(substr(CURRENT_USER, 0, 1));
         <span class="live-date" id="todayDate"></span>
       </div>
 
-      <!-- ── STAT CARDS (Bootstrap row) ── -->
+      <!-- ── STAT CARDS ── -->
       <div class="row g-3 mb-3">
-
         <div class="col-xl-3 col-md-6">
           <div class="stat-card sc-red">
             <div class="sc-top-bar"></div>
             <div class="sc-icon"><i class="bi bi-clipboard-data"></i></div>
             <div class="sc-value" id="statTotal">—</div>
             <div class="sc-label">Total Feedback Received</div>
-            <div class="sc-change sc-up" id="statTotalChange">
-              <i class="bi bi-arrow-up"></i> Loading...
-            </div>
+            <div class="sc-change sc-neu" id="statTotalChange">Loading...</div>
           </div>
         </div>
-
         <div class="col-xl-3 col-md-6">
           <div class="stat-card sc-gold">
             <div class="sc-top-bar"></div>
             <div class="sc-icon"><i class="bi bi-star-fill"></i></div>
             <div class="sc-value" id="statAvg">—</div>
             <div class="sc-label">System-Wide Avg. Rating</div>
-            <div class="sc-change sc-up" id="statAvgChange">
-              <i class="bi bi-arrow-up"></i> Loading...
-            </div>
+            <div class="sc-change sc-neu" id="statAvgChange">Loading...</div>
           </div>
         </div>
-
         <div class="col-xl-3 col-md-6">
           <div class="stat-card sc-grn">
             <div class="sc-top-bar"></div>
@@ -195,23 +169,18 @@ $avatarLetter = strtoupper(substr(CURRENT_USER, 0, 1));
             <div class="sc-change sc-neu" id="statDeptsChange">Loading...</div>
           </div>
         </div>
-
         <div class="col-xl-3 col-md-6">
           <div class="stat-card sc-blu">
             <div class="sc-top-bar"></div>
-            <div class="sc-icon"><i class="bi bi-file-earmark-check"></i></div>
+            <div class="sc-icon"><i class="bi bi-emoji-smile"></i></div>
             <div class="sc-value" id="statReports">—</div>
-            <div class="sc-label">Pending CSMR Reports</div>
-            <div class="sc-change sc-down" id="statReportsChange">
-              <i class="bi bi-arrow-down"></i> Loading...
-            </div>
+            <div class="sc-label">Satisfaction Rate</div>
+            <div class="sc-change sc-neu" id="statReportsChange">Loading...</div>
           </div>
         </div>
-
       </div>
-      <!-- /stat cards -->
 
-      <!-- ── CHARTS ROW (Bootstrap 2-col) ── -->
+      <!-- ── CHARTS ROW ── -->
       <div class="row g-3 mb-3">
 
         <div class="col-lg-6">
@@ -219,10 +188,10 @@ $avatarLetter = strtoupper(substr(CURRENT_USER, 0, 1));
             <div class="card-header-custom">
               <div>
                 <div class="card-title-custom">Satisfaction Trend</div>
-                <div class="card-sub-custom">Monthly average — all departments</div>
+                <div class="card-sub-custom">Monthly avg rating & satisfaction rate</div>
               </div>
               <span class="badge" style="background:#e8f5e9;color:#2e7d32;font-size:0.63rem;padding:4px 10px;border-radius:20px;">
-                <i class="bi bi-arrow-up"></i> Improving
+                Last 8 months
               </span>
             </div>
             <div class="card-body p-3">
@@ -239,7 +208,7 @@ $avatarLetter = strtoupper(substr(CURRENT_USER, 0, 1));
                 <div class="card-sub-custom">Average rating per department</div>
               </div>
               <span class="badge" style="background:#fdf0f0;color:#B5121B;font-size:0.63rem;padding:4px 10px;border-radius:20px;">
-                Q1 2026
+                All time
               </span>
             </div>
             <div class="card-body p-3">
@@ -252,8 +221,8 @@ $avatarLetter = strtoupper(substr(CURRENT_USER, 0, 1));
           <div class="card border-0 shadow-sm h-100" style="border-radius:12px;">
             <div class="card-header-custom">
               <div>
-                <div class="card-title-custom">Service Quality Dimensions</div>
-                <div class="card-sub-custom">System-wide SQD average scores</div>
+                <div class="card-title-custom">Service Quality Dimensions (SQD)</div>
+                <div class="card-sub-custom">System-wide avg scores — ARTA standard</div>
               </div>
               <span class="badge" style="background:#fdf8e6;color:#C8991A;font-size:0.63rem;padding:4px 10px;border-radius:20px;">
                 ARTA SQD
@@ -283,13 +252,12 @@ $avatarLetter = strtoupper(substr(CURRENT_USER, 0, 1));
         </div>
 
       </div>
-      <!-- /charts -->
 
-      <!-- ── DEPARTMENT PERFORMANCE TABLE ── -->
+      <!-- ── DEPARTMENT TABLE ── -->
       <div class="card border-0 shadow-sm mb-3" style="border-radius:12px;overflow:hidden;">
         <div class="card-header-custom">
           <div class="card-title-custom">Department Performance Summary</div>
-          <button class="tb-btn" onclick="location.href='csmr_generator.php'">
+          <button class="tb-btn" onclick="location.href='admin_csmr_generator.php'">
             Full Report <i class="bi bi-arrow-right"></i>
           </button>
         </div>
@@ -300,7 +268,7 @@ $avatarLetter = strtoupper(substr(CURRENT_USER, 0, 1));
                 <th>Department</th>
                 <th>Responses</th>
                 <th>Avg Rating</th>
-                <th>Satisfaction</th>
+                <th>Stars</th>
                 <th>Status</th>
                 <th>Action</th>
               </tr>
@@ -325,7 +293,7 @@ $avatarLetter = strtoupper(substr(CURRENT_USER, 0, 1));
           <div class="card border-0 shadow-sm h-100" style="border-radius:12px;overflow:hidden;">
             <div class="card-header-custom">
               <div class="card-title-custom">Recent Feedback</div>
-              <button class="tb-btn" onclick="location.href='feedback.php'">View All</button>
+              <button class="tb-btn" onclick="location.href='admin_allfeedback.php'">View All</button>
             </div>
             <ul class="feedback-list" id="recentFeedbackList">
               <li class="feedback-item">
@@ -361,36 +329,39 @@ $avatarLetter = strtoupper(substr(CURRENT_USER, 0, 1));
                   </div>
                   <div class="col-6">
                     <div class="mini-stat-box">
-                      <div class="ms-val" style="color:#2e7d32;font-size:0.95rem;">—</div>
+                      <div class="ms-val" style="color:#2e7d32;font-size:0.78rem;">—</div>
                       <div class="ms-label">Top Dept</div>
                     </div>
                   </div>
                   <div class="col-6">
                     <div class="mini-stat-box">
                       <div class="ms-val" style="color:#1565c0;">—</div>
-                      <div class="ms-label">Due Reports</div>
+                      <div class="ms-label">Satisfaction</div>
                     </div>
                   </div>
                 </div>
               </div>
             </div>
 
-            <!-- Quick Actions -->
+            <!-- Quick Actions — FIXED URLs -->
             <div class="card border-0 shadow-sm" style="border-radius:12px;">
               <div class="card-body p-3">
                 <div class="card-title-custom mb-3">Quick Actions</div>
                 <div class="d-flex flex-column gap-2">
-                  <a href="csmr_generator.php" class="action-btn-custom primary">
+                  <a href="admin_csmr_generator.php" class="action-btn-custom primary">
                     <i class="bi bi-file-earmark-text"></i> Generate CSMR Report
                   </a>
-                  <a href="qrcodes.php" class="action-btn-custom">
+                  <a href="admin_qrcodes.php" class="action-btn-custom">
                     <i class="bi bi-qr-code"></i> Manage QR Codes
                   </a>
-                  <a href="export.php" class="action-btn-custom">
+                  <a href="admin_exportdata.php" class="action-btn-custom">
                     <i class="bi bi-download"></i> Export CSV / Excel
                   </a>
-                  <a href="users.php" class="action-btn-custom">
+                  <a href="admin_manage_users.php" class="action-btn-custom">
                     <i class="bi bi-people"></i> Manage Users
+                  </a>
+                  <a href="admin_analytics.php" class="action-btn-custom">
+                    <i class="bi bi-bar-chart-line"></i> View Analytics
                   </a>
                 </div>
               </div>
@@ -398,31 +369,18 @@ $avatarLetter = strtoupper(substr(CURRENT_USER, 0, 1));
 
           </div>
         </div>
-
       </div>
       <!-- /bottom row -->
 
-    </div>
-    <!-- /page-content -->
-
-  </div>
-  <!-- /main-area -->
-
-</div>
-<!-- /app-shell -->
-
-<!-- Bootstrap 5 JS -->
-<script src="../assets/js/bootstrap.bundle.min.js"></script>
-<!-- jQuery + Chart.js -->
-<script src="../assets/js/jquery-4.0.0.min.js"></script>
+    </div><!-- /page-content -->
+  </div><!-- /main-area -->
+</div><!-- /app-shell -->
 
 <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.min.js"></script>
-<!-- Your dashboard JS -->
+<script src="../assets/js/bootstrap.bundle.min.js"></script>
+<script src="../assets/js/jquery-4.0.0.min.js"></script>
 <script src="../js/admin/admin_sidebarcount.js"></script>
 <script src="../assets/js/mobile_toggle.js"></script>
 <script src="../js/admin/admin_dashboard.js"></script>
-
-
-
 </body>
 </html>
