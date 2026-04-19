@@ -77,9 +77,7 @@ $deptInfo = $deptStmt->fetch(PDO::FETCH_ASSOC);
       <li><a href="dept_csmr.php" class="active">
         <span class="nav-icon"><i class="bi bi-file-earmark-text"></i></span> Generate CSMR
       </a></li>
-      <li><a href="dept_analytics.php">
-        <span class="nav-icon"><i class="bi bi-bar-chart-line"></i></span> My Analytics
-      </a></li>
+    
       <li><a href="dept_export.php">
         <span class="nav-icon"><i class="bi bi-download"></i></span> Export Data
       </a></li>
