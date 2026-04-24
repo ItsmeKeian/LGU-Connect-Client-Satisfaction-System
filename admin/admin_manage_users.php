@@ -62,6 +62,9 @@ $avatarLetter = strtoupper(substr(CURRENT_USER, 0, 1));
       <li><a href="admin_analytics.php">
         <span class="nav-icon"><i class="bi bi-bar-chart-line"></i></span> Analytics
       </a></li>
+      <li><a href="admin_predictive.php">
+        <span class="nav-icon"><i class="bi bi-graph-up-arrow"></i></span> Predictive Analytics
+      </a></li>
       <li><a href="admin_exportdata.php">
         <span class="nav-icon"><i class="bi bi-download"></i></span> Export Data
       </a></li>
