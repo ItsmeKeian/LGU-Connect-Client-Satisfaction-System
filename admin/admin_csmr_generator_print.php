@@ -3,6 +3,9 @@ require "../php/auth_check.php";
 require "../php/dbconnect.php";   // provides $conn
 requireSuperAdmin();
 
+// Official ARTA SQD/CC wording, keyed by language + channel
+$csm = include __DIR__ . '/../php/config/csm_questions.php';
+
 // ── Inputs ──
 $dept_code     = (isset($_GET['dept_id']) && $_GET['dept_id'] !== '') ? $_GET['dept_id'] : null;
 $dept_name_q   = $_GET['dept_name']    ?? 'All Departments';
@@ -11,6 +14,25 @@ $date_to       = $_GET['date_to']      ?? date('Y-m-t');
 $custom_title  = trim($_GET['title']   ?? '');
 $incl_comments = (int)($_GET['incl_comments'] ?? 1);
 $incl_raw      = (int)($_GET['incl_raw']      ?? 0);
+
+// ── Report language (admin-selected — defaults to English) ──
+$lang = strtolower(trim($_GET['lang'] ?? 'en'));
+if (!in_array($lang, ['en', 'tl'])) $lang = 'en';
+
+// ── Channel for SQD wording ──
+// If a specific department is selected, use ITS channel (accurate).
+// For system-wide reports (mixed departments), default to 'onsite'
+// since that's the common case — flagged in case departments end up
+// split across onsite/online and a mixed-wording report is wanted later.
+$channel = 'onsite';
+if ($dept_code) {
+    $chStmt = $conn->prepare("SELECT channel FROM departments WHERE code = ? LIMIT 1");
+    $chStmt->execute([$dept_code]);
+    $chRow = $chStmt->fetch(PDO::FETCH_ASSOC);
+    if ($chRow && !empty($chRow['channel'])) {
+        $channel = $chRow['channel'];
+    }
+}
 
 $date_from_dt = date('Y-m-d', strtotime($date_from));
 $date_to_dt   = date('Y-m-d', strtotime($date_to));
@@ -27,6 +49,9 @@ if ($dept_code) {
 }
 
 // ── Summary ──
+// NOTE: AVG() in MySQL automatically ignores NULL values, so N/A (NULL)
+// SQD answers are already correctly excluded from both the sum and the
+// count here — no special handling needed for that part.
 $stmt = $conn->prepare("
     SELECT
         COUNT(*)                                                                AS total_responses,
@@ -44,29 +69,43 @@ $stmt = $conn->prepare("
         ROUND(AVG(f.sqd4),2) AS avg_sqd4, ROUND(AVG(f.sqd5),2) AS avg_sqd5,
         ROUND(AVG(f.sqd6),2) AS avg_sqd6, ROUND(AVG(f.sqd7),2) AS avg_sqd7,
         ROUND(AVG(f.sqd8),2) AS avg_sqd8,
-        SUM(CASE WHEN f.respondent_type='citizen'        THEN 1 ELSE 0 END)   AS cnt_citizen,
-        SUM(CASE WHEN f.respondent_type='employee'       THEN 1 ELSE 0 END)   AS cnt_employee,
-        SUM(CASE WHEN f.respondent_type='business_owner' THEN 1 ELSE 0 END)   AS cnt_business,
-        SUM(CASE WHEN f.respondent_type='other'          THEN 1 ELSE 0 END)   AS cnt_other
+        SUM(CASE WHEN f.respondent_type='citizen'   THEN 1 ELSE 0 END)         AS cnt_citizen,
+        SUM(CASE WHEN f.respondent_type='business'  THEN 1 ELSE 0 END)         AS cnt_business,
+        SUM(CASE WHEN f.respondent_type='government' THEN 1 ELSE 0 END)        AS cnt_government,
+        SUM(CASE WHEN f.respondent_type IN ('employee','business_owner','other')
+                 THEN 1 ELSE 0 END)                                            AS cnt_legacy_other,
+        -- CC1 distribution (1-4)
+        SUM(CASE WHEN f.cc1 = 1 THEN 1 ELSE 0 END) AS cc1_1,
+        SUM(CASE WHEN f.cc1 = 2 THEN 1 ELSE 0 END) AS cc1_2,
+        SUM(CASE WHEN f.cc1 = 3 THEN 1 ELSE 0 END) AS cc1_3,
+        SUM(CASE WHEN f.cc1 = 4 THEN 1 ELSE 0 END) AS cc1_4,
+        -- CC2 distribution (1-5)
+        SUM(CASE WHEN f.cc2 = 1 THEN 1 ELSE 0 END) AS cc2_1,
+        SUM(CASE WHEN f.cc2 = 2 THEN 1 ELSE 0 END) AS cc2_2,
+        SUM(CASE WHEN f.cc2 = 3 THEN 1 ELSE 0 END) AS cc2_3,
+        SUM(CASE WHEN f.cc2 = 4 THEN 1 ELSE 0 END) AS cc2_4,
+        SUM(CASE WHEN f.cc2 = 5 THEN 1 ELSE 0 END) AS cc2_5,
+        -- CC3 distribution (1-4)
+        SUM(CASE WHEN f.cc3 = 1 THEN 1 ELSE 0 END) AS cc3_1,
+        SUM(CASE WHEN f.cc3 = 2 THEN 1 ELSE 0 END) AS cc3_2,
+        SUM(CASE WHEN f.cc3 = 3 THEN 1 ELSE 0 END) AS cc3_3,
+        SUM(CASE WHEN f.cc3 = 4 THEN 1 ELSE 0 END) AS cc3_4
     FROM feedback f $where
 ");
 $stmt->execute($params);
 $s     = $stmt->fetch(PDO::FETCH_ASSOC);
 $total = max((int)$s['total_responses'], 1);
 
-// ── SQD labels (ARTA standard) ──
-$sqd_labels = [
-    'sqd0' => 'SQD0 — Awareness of Anti-Red Tape Act',
-    'sqd1' => 'SQD1 — Service was fast and on time',
-    'sqd2' => 'SQD2 — Office had updated service info',
-    'sqd3' => 'SQD3 — Staff were courteous and helpful',
-    'sqd4' => 'SQD4 — Asked for unnecessary documents',
-    'sqd5' => 'SQD5 — Staff did not ask for extra payment',
-    'sqd6' => 'SQD6 — Followed simple and fast process',
-    'sqd7' => 'SQD7 — Service delivered as promised',
-    'sqd8' => 'SQD8 — Overall satisfaction with service',
-];
+// ── SQD labels — official ARTA wording, resolved by report language + channel ──
 $sqd_keys = ['sqd0','sqd1','sqd2','sqd3','sqd4','sqd5','sqd6','sqd7','sqd8'];
+$sqd_text = $csm['sqd'][$lang][$channel] ?? $csm['sqd']['en']['onsite'];
+$sqd_labels = [];
+foreach ($sqd_keys as $i => $key) {
+    $sqd_labels[$key] = 'SQD' . $i . ' — ' . $sqd_text[$key];
+}
+
+// ── CC labels — official ARTA wording, resolved by report language ──
+$cc_text = $csm['cc'][$lang] ?? $csm['cc']['en'];
 
 // ── Department breakdown ──
 $stmt2 = $conn->prepare("
@@ -131,6 +170,12 @@ function deptSqdAvg($d, $keys) {
     $vals = array_filter(array_map(fn($k) => (float)($d["avg_$k"] ?? 0), $keys));
     return count($vals) > 0 ? array_sum($vals) / count($vals) : 0;
 }
+// Roman numerals for dynamically-numbered sections (grows as sections are added)
+function toRoman($num) {
+    $map = [1=>'I',2=>'II',3=>'III',4=>'IV',5=>'V',6=>'VI',7=>'VII',8=>'VIII',9=>'IX',10=>'X'];
+    return $map[$num] ?? (string)$num;
+}
+$sectionNum = 0; // incremented before each section header is printed
 ?>
 <!DOCTYPE html>
 <html lang="en">
@@ -210,6 +255,14 @@ body { font-family:'Times New Roman',Georgia,serif; font-size:11pt; color:#1a1a1
 .sqd-table td:not(:first-child):not(:nth-child(2)) { text-align:center; }
 .sqd-table .overall-row td { font-weight:bold; background:#fff8f0 !important; border-top:1.5px solid #dba0a0; }
 
+/* CC table */
+.cc-table th { background:#5a1010; color:#fff; }
+.cc-table td:not(:first-child) { text-align:center; }
+.cc-table .cc-question-row td {
+  background:#fdf5f5 !important; font-weight:bold; font-size:9pt; color:#5a1010;
+  border-top:1.5px solid #dba0a0;
+}
+
 /* Dept table */
 .dept-table th { background:#5a1010; color:#fff; }
 .dept-table td:not(:first-child) { text-align:center; }
@@ -249,6 +302,7 @@ body { font-family:'Times New Roman',Georgia,serif; font-size:11pt; color:#1a1a1
     <button class="btn-close-bar" onclick="window.close()">✕ Close</button>
     <span style="font-size:12px;color:#777;margin-left:8px">
       In the print dialog → choose <em>Save as PDF</em> for a digital copy.
+      Report language: <strong><?= $lang === 'tl' ? 'Tagalog' : 'English' ?></strong>
     </span>
   </div>
 
@@ -280,7 +334,7 @@ body { font-family:'Times New Roman',Georgia,serif; font-size:11pt; color:#1a1a1
 
     <!-- ══ I. EXECUTIVE SUMMARY ══ -->
     <div class="rpt-section">
-      <div class="rpt-section-title">I. Executive Summary</div>
+      <div class="rpt-section-title"><?= toRoman(++$sectionNum) ?>. Executive Summary</div>
 
       <!-- 4 stat boxes -->
       <div class="summary-grid">
@@ -302,23 +356,23 @@ body { font-family:'Times New Roman',Georgia,serif; font-size:11pt; color:#1a1a1
         </div>
       </div>
 
-      <!-- Respondent type breakdown -->
+      <!-- Respondent type breakdown (UPDATED: official ARTA client types) -->
       <div class="resp-grid">
         <div class="resp-box">
           <div class="rv"><?= $s['cnt_citizen'] ?></div>
           <div class="rl">Citizens</div>
         </div>
         <div class="resp-box">
-          <div class="rv"><?= $s['cnt_employee'] ?></div>
-          <div class="rl">Employees</div>
-        </div>
-        <div class="resp-box">
           <div class="rv"><?= $s['cnt_business'] ?></div>
-          <div class="rl">Business Owners</div>
+          <div class="rl">Business</div>
         </div>
         <div class="resp-box">
-          <div class="rv"><?= $s['cnt_other'] ?></div>
-          <div class="rl">Others</div>
+          <div class="rv"><?= $s['cnt_government'] ?></div>
+          <div class="rl">Government</div>
+        </div>
+        <div class="resp-box">
+          <div class="rv"><?= $s['cnt_legacy_other'] ?></div>
+          <div class="rl">Other / Legacy</div>
         </div>
       </div>
 
@@ -348,7 +402,7 @@ body { font-family:'Times New Roman',Georgia,serif; font-size:11pt; color:#1a1a1
 
     <!-- ══ II. RATING DISTRIBUTION ══ -->
     <div class="rpt-section">
-      <div class="rpt-section-title">II. Rating Distribution</div>
+      <div class="rpt-section-title"><?= toRoman(++$sectionNum) ?>. Rating Distribution</div>
       <?php
       $ratings = [
         5 => ['label' => 'Excellent (5)', 'count' => (int)$s['cnt_5'], 'color' => '#1e7c3b'],
@@ -373,7 +427,7 @@ body { font-family:'Times New Roman',Georgia,serif; font-size:11pt; color:#1a1a1
 
     <!-- ══ III. SQD SCORES ══ -->
     <div class="rpt-section">
-      <div class="rpt-section-title">III. Service Quality Dimensions (SQD) Scores</div>
+      <div class="rpt-section-title"><?= toRoman(++$sectionNum) ?>. Service Quality Dimensions (SQD) Scores</div>
       <table class="rpt-table sqd-table">
         <thead>
           <tr>
@@ -422,12 +476,76 @@ body { font-family:'Times New Roman',Georgia,serif; font-size:11pt; color:#1a1a1
           </tr>
         </tbody>
       </table>
+      <p style="font-size:7.5pt;color:#999;margin-top:6px">
+        Note: Scores exclude respondents who marked "Not Applicable (N/A)" for a given item, per ARTA guidelines.
+      </p>
     </div>
 
-    <!-- ══ IV. DEPARTMENT BREAKDOWN ══ -->
+    <!-- ══ IV. CITIZEN'S CHARTER AWARENESS (NEW) ══ -->
+    <div class="rpt-section">
+      <div class="rpt-section-title"><?= toRoman(++$sectionNum) ?>. Citizen's Charter (CC) Awareness</div>
+      <table class="rpt-table cc-table">
+        <thead>
+          <tr>
+            <th style="width:40px">Code</th>
+            <th>Response</th>
+            <th style="text-align:center">Count</th>
+            <th style="text-align:center">%</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr class="cc-question-row">
+            <td colspan="4"><?= htmlspecialchars($cc_text['cc1']['question']) ?></td>
+          </tr>
+          <?php foreach ($cc_text['cc1']['options'] as $optNum => $optText):
+              $cnt = (int)($s["cc1_$optNum"] ?? 0);
+          ?>
+          <tr>
+            <td style="text-align:center;color:#aaa"><?= $optNum ?></td>
+            <td><?= htmlspecialchars($optText) ?></td>
+            <td style="text-align:center"><?= $cnt ?></td>
+            <td style="text-align:center"><?= pct($cnt, $total) ?>%</td>
+          </tr>
+          <?php endforeach; ?>
+
+          <tr class="cc-question-row">
+            <td colspan="4"><?= htmlspecialchars($cc_text['cc2']['question']) ?></td>
+          </tr>
+          <?php foreach ($cc_text['cc2']['options'] as $optNum => $optText):
+              $cnt = (int)($s["cc2_$optNum"] ?? 0);
+          ?>
+          <tr>
+            <td style="text-align:center;color:#aaa"><?= $optNum ?></td>
+            <td><?= htmlspecialchars($optText) ?></td>
+            <td style="text-align:center"><?= $cnt ?></td>
+            <td style="text-align:center"><?= pct($cnt, $total) ?>%</td>
+          </tr>
+          <?php endforeach; ?>
+
+          <tr class="cc-question-row">
+            <td colspan="4"><?= htmlspecialchars($cc_text['cc3']['question']) ?></td>
+          </tr>
+          <?php foreach ($cc_text['cc3']['options'] as $optNum => $optText):
+              $cnt = (int)($s["cc3_$optNum"] ?? 0);
+          ?>
+          <tr>
+            <td style="text-align:center;color:#aaa"><?= $optNum ?></td>
+            <td><?= htmlspecialchars($optText) ?></td>
+            <td style="text-align:center"><?= $cnt ?></td>
+            <td style="text-align:center"><?= pct($cnt, $total) ?>%</td>
+          </tr>
+          <?php endforeach; ?>
+        </tbody>
+      </table>
+      <p style="font-size:7.5pt;color:#999;margin-top:6px">
+        Note: CC2 and CC3 are only answered by respondents aware of the office's Citizen's Charter (CC1 = 1, 2, or 3).
+      </p>
+    </div>
+
+    <!-- ══ V. DEPARTMENT BREAKDOWN ══ -->
     <?php if (!empty($depts)): ?>
     <div class="rpt-section">
-      <div class="rpt-section-title">IV. Performance by Department / Office</div>
+      <div class="rpt-section-title"><?= toRoman(++$sectionNum) ?>. Performance by Department / Office</div>
       <table class="rpt-table dept-table">
         <thead>
           <tr>
@@ -468,10 +586,10 @@ body { font-family:'Times New Roman',Georgia,serif; font-size:11pt; color:#1a1a1
     </div>
     <?php endif; ?>
 
-    <!-- ══ V. INDIVIDUAL FEEDBACK (optional) ══ -->
+    <!-- ══ VI. INDIVIDUAL FEEDBACK (optional) ══ -->
     <?php if ($incl_raw && !empty($feedbacks)): ?>
     <div class="rpt-section page-break">
-      <div class="rpt-section-title">V. Individual Feedback Records</div>
+      <div class="rpt-section-title"><?= toRoman(++$sectionNum) ?>. Individual Feedback Records</div>
       <table class="rpt-table feedback-table">
         <thead>
           <tr>
@@ -520,13 +638,7 @@ body { font-family:'Times New Roman',Georgia,serif; font-size:11pt; color:#1a1a1
 
     <!-- ══ CERTIFICATION ══ -->
     <div class="rpt-section">
-      <?php
-      // Dynamic section number
-      $sec = 5; // I–IV always present
-      if ($incl_raw && !empty($feedbacks)) $sec = 6;
-      $roman = [1=>'I',2=>'II',3=>'III',4=>'IV',5=>'V',6=>'VI'];
-      ?>
-      <div class="rpt-section-title"><?= $roman[$sec] ?>. Certification</div>
+      <div class="rpt-section-title"><?= toRoman(++$sectionNum) ?>. Certification</div>
       <p class="narrative" style="margin-bottom:32px">
         This Client Satisfaction Measurement Report is hereby certified to have been prepared
         in accordance with Republic Act No. 11032 (<em>Ease of Doing Business and Efficient

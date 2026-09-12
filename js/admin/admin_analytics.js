@@ -1,4 +1,3 @@
-
 // ── Chart instances (kept for destroy/recreate) ──
 let chartTrend  = null;
 let chartRating = null;
@@ -52,7 +51,8 @@ function loadAnalytics() {
       renderKPIs(res.kpi, res.period);
       renderTrendChart(res.trend);
       renderRatingChart(res.kpi);
-      renderSQDScores(res.kpi);
+      renderSQDScores(res.kpi, res.sqd_labels);
+      renderCCSection(res.cc_data);
       renderDemoCharts(res.by_type, res.by_sex, res.by_age);
       renderDeptTable(res.by_dept);
       renderComments(res.recent_comments);
@@ -62,7 +62,7 @@ function loadAnalytics() {
       alert('Server error. Check console (F12).');
     },
     complete() {
-      document.getElementById('spinnerOverlay').classList.remove('show');
+      document.getElementById('spinnerOverlay')?.classList.remove('show');
       document.getElementById('loadBtn').classList.remove('loading');
     }
   });
@@ -172,27 +172,21 @@ function renderRatingChart(kpi) {
 }
 
 // ── SQD Scores (custom HTML bars) ──
-function renderSQDScores(kpi) {
-  const sqds = [
-    { key:'sqd0', label:'SQD0 — Anti-Red Tape Awareness' },
-    { key:'sqd1', label:'SQD1 — Service Speed & Timeliness' },
-    { key:'sqd2', label:'SQD2 — Updated Service Info' },
-    { key:'sqd3', label:'SQD3 — Staff Courtesy & Helpfulness' },
-    { key:'sqd4', label:'SQD4 — No Unnecessary Requirements' },
-    { key:'sqd5', label:'SQD5 — No Extra Payment Asked' },
-    { key:'sqd6', label:'SQD6 — Simple & Fast Process' },
-    { key:'sqd7', label:'SQD7 — Service Delivered as Promised' },
-    { key:'sqd8', label:'SQD8 — Overall Satisfaction' },
-  ];
+// UPDATED: labels now come from the backend (sqd_labels), resolved from the
+// official ARTA wording in config/csm_questions.php, instead of a hardcoded
+// (and previously incorrect) list here.
+function renderSQDScores(kpi, sqdLabels) {
+  const sqdKeys = ['sqd0','sqd1','sqd2','sqd3','sqd4','sqd5','sqd6','sqd7','sqd8'];
 
   let html = '<div style="display:grid;grid-template-columns:1fr 1fr;gap:8px 24px">';
-  sqds.forEach(s => {
-    const val  = parseFloat(kpi['avg_' + s.key] || 0);
-    const pct  = Math.round(val / 5 * 100);
-    const color= val >= 4 ? '#1e7c3b' : val >= 3 ? '#1a6fbf' : val >= 2 ? '#b06c10' : '#c0392b';
+  sqdKeys.forEach(key => {
+    const val   = parseFloat(kpi['avg_' + key] || 0);
+    const pct   = Math.round(val / 5 * 100);
+    const color = val >= 4 ? '#1e7c3b' : val >= 3 ? '#1a6fbf' : val >= 2 ? '#b06c10' : '#c0392b';
+    const label = (sqdLabels && sqdLabels[key]) ? sqdLabels[key] : key.toUpperCase();
     html += `
       <div class="sqd-row">
-        <div class="sqd-label">${s.label}</div>
+        <div class="sqd-label">${escHtml(label)}</div>
         <div class="sqd-bar-wrap">
           <div class="sqd-bar-fill" style="width:${pct}%;background:${color}"></div>
         </div>
@@ -201,6 +195,49 @@ function renderSQDScores(kpi) {
   });
   html += '</div>';
   document.getElementById('sqdScoresBody').innerHTML = html;
+}
+
+// ── Citizen's Charter (CC1-3) Awareness section (NEW) ──
+function renderCCSection(ccData) {
+  const el = document.getElementById('ccScoresBody');
+  if (!ccData) {
+    el.innerHTML = '<div class="empty-analytics"><i class="bi bi-file-earmark-text"></i><p>No Citizen\'s Charter data for this period</p></div>';
+    return;
+  }
+
+  document.getElementById('ccAwareSubLabel').textContent =
+    `${ccData.aware_pct}% of respondents are aware of the office's Citizen's Charter`;
+
+  function renderQuestionBlock(key, data) {
+    let rows = '';
+    data.options.forEach(opt => {
+      const color = '#8B1A1A';
+      rows += `
+        <div class="sqd-row">
+          <div class="sqd-label" style="font-size:11.5px">${escHtml(opt.label)}</div>
+          <div class="sqd-bar-wrap">
+            <div class="sqd-bar-fill" style="width:${opt.pct}%;background:${color}"></div>
+          </div>
+          <div class="sqd-score" style="color:${color};min-width:70px">${opt.count} (${opt.pct}%)</div>
+        </div>`;
+    });
+    return `
+      <div style="margin-bottom:18px">
+        <div style="font-size:12.5px;font-weight:700;color:#5a1010;margin-bottom:8px;text-transform:uppercase">
+          ${key.toUpperCase()} — <span style="font-weight:400;text-transform:none;color:#555">${escHtml(data.question)}</span>
+        </div>
+        ${rows}
+      </div>`;
+  }
+
+  let html = renderQuestionBlock('cc1', ccData.cc1);
+  html += renderQuestionBlock('cc2', ccData.cc2);
+  html += renderQuestionBlock('cc3', ccData.cc3);
+  html += `<p style="font-size:11px;color:#999;margin-top:4px">
+    Note: CC2 and CC3 percentages are relative to respondents aware of the Citizen's Charter (CC1 = 1, 2, or 3), not all respondents.
+  </p>`;
+
+  el.innerHTML = html;
 }
 
 // ── Donut charts (Type, Sex, Age) ──
@@ -215,7 +252,7 @@ function renderDemoCharts(byType, bySex, byAge) {
   };
 
   // Respondent type
-  const typeLabels = byType.map(t => capitalize(t.respondent_type.replace(/_/g,' ')));
+  const typeLabels = byType.map(t => capitalize((t.respondent_type || 'unknown').replace(/_/g,' ')));
   const typeData   = byType.map(t => parseInt(t.total));
   const typeColors = ['#8B1A1A','#1a6fbf','#1e7c3b','#b06c10','#888'];
   if (chartType) chartType.destroy();

@@ -221,6 +221,22 @@ $avatarLetter = strtoupper(substr(CURRENT_USER, 0, 1));
           </div>
         </div>
 
+        <!-- ── ROW 2b: Citizen's Charter Awareness (NEW, full width) ── -->
+        <div class="chart-grid-full">
+          <div class="chart-card">
+            <div class="chart-card-header">
+              <h4><i class="bi bi-file-earmark-text"></i> Citizen's Charter (CC) Awareness</h4>
+              <span class="chart-sub" id="ccAwareSubLabel">% aware of the office's Citizen's Charter</span>
+            </div>
+            <div class="chart-body" id="ccScoresBody">
+              <div class="empty-analytics">
+                <i class="bi bi-file-earmark-text"></i>
+                <p>Click "Load Analytics" to view Citizen's Charter data</p>
+              </div>
+            </div>
+          </div>
+        </div>
+
         <!-- ── ROW 3: Demographics (3 cols) ── -->
         <div class="chart-grid-3">
 

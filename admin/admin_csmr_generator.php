@@ -125,6 +125,15 @@ $avatarLetter = strtoupper(substr(CURRENT_USER, 0, 1));
               </select>
             </div>
 
+            <!-- Report Language (NEW) — applies to SQD/CC wording shown in the printed report -->
+            <div class="filter-group">
+              <label><i class="bi bi-translate" style="margin-right:4px"></i> Report Language</label>
+              <select id="filterLang">
+                <option value="en" selected>English</option>
+                <option value="tl">Tagalog</option>
+              </select>
+            </div>
+
             <div class="filter-group">
               <label><i class="bi bi-calendar3" style="margin-right:4px"></i> Quick Period</label>
               <div class="period-chips">

@@ -1,3 +1,15 @@
+// ── Local date formatting helper ──
+// IMPORTANT: do NOT use `.toISOString().split('T')[0]` for local dates.
+// toISOString() always converts to UTC, and in timezones ahead of UTC
+// (e.g. Philippines, UTC+8), local midnight shifts back into the
+// previous day once converted — silently sending the wrong date to
+// the server (e.g. "Today" would actually query yesterday).
+function toLocalISODate(d) {
+  const y = d.getFullYear();
+  const m = String(d.getMonth() + 1).padStart(2, '0');
+  const day = String(d.getDate()).padStart(2, '0');
+  return `${y}-${m}-${day}`;
+}
 
 // ── Date display ──
 document.getElementById('todayDate').textContent =
@@ -7,8 +19,8 @@ document.getElementById('todayDate').textContent =
 const now      = new Date();
 const firstDay = new Date(now.getFullYear(), now.getMonth(), 1);
 const lastDay  = new Date(now.getFullYear(), now.getMonth() + 1, 0);
-document.getElementById('filterDateFrom').value = firstDay.toISOString().split('T')[0];
-document.getElementById('filterDateTo').value   = lastDay.toISOString().split('T')[0];
+document.getElementById('filterDateFrom').value = toLocalISODate(firstDay);
+document.getElementById('filterDateTo').value   = toLocalISODate(lastDay);
 
 // ══════════════════════════════════════════════════════════
 // FIX 1 — Load departments
@@ -90,8 +102,8 @@ function setDateRange(period) {
       to   = new Date(n.getFullYear(), 11, 31); break;
     default: return;
   }
-  document.getElementById('filterDateFrom').value = from.toISOString().split('T')[0];
-  document.getElementById('filterDateTo').value   = to.toISOString().split('T')[0];
+  document.getElementById('filterDateFrom').value = toLocalISODate(from);
+  document.getElementById('filterDateTo').value   = toLocalISODate(to);
 }
 
 // ══════════════════════════════════════════════════════════
@@ -104,6 +116,7 @@ let lastReportData = null;
 
 function generateReport() {
   const dept     = document.getElementById('filterDept').value;
+  const lang     = document.getElementById('filterLang').value; // NEW — report language
   const dateFrom = document.getElementById('filterDateFrom').value;
   const dateTo   = document.getElementById('filterDateTo').value;
   const inclDept = document.getElementById('inclDeptBreakdown').checked ? 1 : 0;
@@ -124,7 +137,11 @@ function generateReport() {
     url: '../php/get/get_csmr_data.php',   // ✅ dedicated JSON handler
     method: 'POST',
     dataType: 'json',
-    data: { dept_id:dept, date_from:dateFrom, date_to:dateTo, incl_dept:inclDept, incl_raw:inclRaw },
+    data: {
+      dept_id: dept, date_from: dateFrom, date_to: dateTo,
+      incl_dept: inclDept, incl_raw: inclRaw,
+      lang: lang // NEW — passed through in case the preview ever needs question text
+    },
     success(res) {
       if (!res.success) {
         alert('Error: ' + (res.message || 'Unknown error'));
@@ -315,6 +332,7 @@ function openPrintView() {
     date_from:     document.getElementById('filterDateFrom').value,
     date_to:       document.getElementById('filterDateTo').value,
     title:         document.getElementById('filterTitle').value,
+    lang:          document.getElementById('filterLang').value, // NEW — report language
     incl_comments: document.getElementById('inclComments').checked ? 1 : 0,
     incl_raw:      document.getElementById('inclRawFeedback').checked ? 1 : 0,
     incl_charts:   document.getElementById('inclCharts').checked ? 1 : 0
