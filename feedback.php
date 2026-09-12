@@ -23,6 +23,12 @@
     </div>
   </div>
   <div class="fb-header-sub2" id="lguAddress">Loading…</div>
+
+  <!-- ══ LANGUAGE TOGGLE (NEW) ══ -->
+  <div class="fb-lang-toggle" id="langToggle">
+    <button type="button" class="lang-btn active" data-lang="en">English</button>
+    <button type="button" class="lang-btn" data-lang="tl">Tagalog</button>
+  </div>
 </div>
 
 <!-- ══ MAIN CONTENT ══ -->
@@ -86,18 +92,16 @@
           <!-- Dept dropdown injected by JS when no ?dept= in URL -->
           <div id="deptSelectWrap"></div>
 
-          <!-- Respondent Type -->
+          <!-- Respondent Type (UPDATED: Citizen / Business / Government — official ARTA client types) -->
           <div class="form-group" id="typeGroup">
-            <label class="form-label">I am a <span class="required">*</span></label>
+            <label class="form-label">Client type <span class="required">*</span></label>
             <div class="radio-group">
               <input type="radio" class="radio-chip" name="respondent_type" id="type_citizen" value="citizen" checked>
               <label for="type_citizen">👤 Citizen</label>
-              <input type="radio" class="radio-chip" name="respondent_type" id="type_employee" value="employee">
-              <label for="type_employee">🏢 Employee</label>
-              <input type="radio" class="radio-chip" name="respondent_type" id="type_business" value="business_owner">
-              <label for="type_business">🏪 Business Owner</label>
-              <input type="radio" class="radio-chip" name="respondent_type" id="type_other" value="other">
-              <label for="type_other">👥 Other</label>
+              <input type="radio" class="radio-chip" name="respondent_type" id="type_business" value="business">
+              <label for="type_business">🏪 Business</label>
+              <input type="radio" class="radio-chip" name="respondent_type" id="type_government" value="government">
+              <label for="type_government">🏛 Government (Employee or another agency)</label>
             </div>
           </div>
 
@@ -133,13 +137,46 @@
             <div class="field-error">Please select your age group.</div>
           </div>
 
+          <!-- Region of residence (NEW) -->
+          <div class="form-group" id="regionGroup">
+            <label class="form-label">Region of residence <span class="required">*</span></label>
+            <input type="text" class="form-input" id="region" name="region"
+              placeholder="e.g. Region VIII (Eastern Visayas)">
+            <div class="field-error">Please enter your region of residence.</div>
+          </div>
+
+          <!-- Service Availed (NEW) -->
+          <div class="form-group" id="serviceGroup">
+            <label class="form-label">Service Availed <span class="required">*</span></label>
+            <input type="text" class="form-input" id="service_availed" name="service_availed"
+              placeholder="e.g. Business Permit Renewal">
+            <div class="field-error">Please enter the service you availed.</div>
+          </div>
+
         </div>
       </div>
 
-      <!-- ══ STEP 2: Overall Rating ══ -->
+      <!-- ══ STEP 2: Citizen's Charter (NEW) ══ -->
       <div class="fb-card">
         <div class="fb-card-header">
           <div class="step-badge">2</div>
+          <div>
+            <h3 id="ccStepTitle">Citizen's Charter</h3>
+            <p id="ccStepSub">The Citizen's Charter is an official document listing an office's services, requirements, fees, and processing times.</p>
+          </div>
+        </div>
+        <div class="fb-card-body" style="padding:16px 20px">
+          <div id="ccContainer">
+            <div class="skeleton" style="margin-bottom:20px;height:60px"></div>
+            <div class="skeleton" style="height:60px"></div>
+          </div>
+        </div>
+      </div>
+
+      <!-- ══ STEP 3: Overall Rating ══ -->
+      <div class="fb-card">
+        <div class="fb-card-header">
+          <div class="step-badge">3</div>
           <div>
             <h3>Overall Satisfaction</h3>
             <p>How would you rate your overall experience?</p>
@@ -165,13 +202,13 @@
         </div>
       </div>
 
-      <!-- ══ STEP 3: SQD Questions (injected by feedback.js) ══ -->
+      <!-- ══ STEP 4: SQD Questions (injected by feedback.js) ══ -->
       <div class="fb-card">
         <div class="fb-card-header">
-          <div class="step-badge">3</div>
+          <div class="step-badge">4</div>
           <div>
-            <h3>Service Quality Dimensions</h3>
-            <p>Rate each statement — 1 (Strongly Disagree) to 5 (Strongly Agree)</p>
+            <h3 id="sqdStepTitle">Service Quality Dimensions</h3>
+            <p id="sqdStepSub">For each statement, choose the answer that best fits your experience.</p>
           </div>
         </div>
         <div class="fb-card-body" style="padding:16px 20px">
@@ -183,10 +220,10 @@
         </div>
       </div>
 
-      <!-- ══ STEP 4: Comments ══ -->
+      <!-- ══ STEP 5: Comments ══ -->
       <div class="fb-card">
         <div class="fb-card-header">
-          <div class="step-badge">4</div>
+          <div class="step-badge">5</div>
           <div>
             <h3>Comments &amp; Suggestions</h3>
             <p>Optional — help us serve you better</p>
@@ -202,6 +239,12 @@
             <label class="form-label">Suggestions for Improvement</label>
             <textarea class="form-textarea" name="suggestions" id="suggestions"
               placeholder="How can we improve our service?…" rows="3"></textarea>
+          </div>
+          <!-- Email (NEW, optional) -->
+          <div class="form-group">
+            <label class="form-label">Email address (optional)</label>
+            <input type="email" class="form-input" id="email" name="email"
+              placeholder="you@example.com">
           </div>
         </div>
       </div>
