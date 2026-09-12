@@ -236,6 +236,19 @@ $avatarLetter = strtoupper(substr(CURRENT_USER, 0, 1));
               <option value="inactive">Inactive</option>
             </select>
           </div>
+          <div class="col-md-6">
+            <label class="form-label">
+              Channel
+              <span style="font-weight:400;color:#999;font-size:0.72rem"
+                    title="Determines which SQD wording (onsite counter visit vs. fully online transaction) citizens see for this department's feedback form.">
+                <i class="bi bi-info-circle"></i>
+              </span>
+            </label>
+            <select class="form-select" id="deptChannel">
+              <option value="onsite">Onsite (walk-in / counter visit)</option>
+              <option value="online">Online (fully online transaction)</option>
+            </select>
+          </div>
           <div class="col-12">
             <label class="form-label">Description</label>
             <textarea class="form-control" id="deptDesc" rows="2"
@@ -298,7 +311,8 @@ $avatarLetter = strtoupper(substr(CURRENT_USER, 0, 1));
         <p class="mt-3 mb-1" style="font-size:0.9rem;font-weight:600;">Delete this department?</p>
         <p class="text-muted" style="font-size:0.78rem;" id="deleteConfirmName"></p>
         <p style="font-size:0.73rem;color:#c62828;">
-          All feedback records for this department will also be affected.
+          Departments with existing feedback records cannot be deleted —
+          set them to Inactive instead to preserve historical data.
         </p>
       </div>
       <div class="modal-footer justify-content-center gap-2">

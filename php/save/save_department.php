@@ -16,6 +16,13 @@ $status = $_POST['status'] ?? 'active';
 $description = trim($_POST['description'] ?? '');
 $head = trim($_POST['head'] ?? '');
 
+// NEW: onsite/online channel — determines which SQD4/6/7 wording this
+// department's citizens see (see config/csm_questions.php).
+$channel = $_POST['channel'] ?? 'onsite';
+if (!in_array($channel, ['onsite', 'online'])) {
+    $channel = 'onsite';
+}
+
 if (empty($name) || empty($code)) {
     echo json_encode(['success' => false, 'message' => 'Name and code are required.']);
     exit();
@@ -26,10 +33,10 @@ try {
         // UPDATE existing department
         $stmt = $conn->prepare("
             UPDATE departments
-            SET name=?, code=?, status=?, description=?, head=?
+            SET name=?, code=?, status=?, description=?, head=?, channel=?
             WHERE id=?
         ");
-        $stmt->execute([$name, $code, $status, $description, $head, $id]);
+        $stmt->execute([$name, $code, $status, $description, $head, $channel, $id]);
         echo json_encode(['success' => true, 'message' => "Department '{$name}' updated successfully."]);
     } else {
         // INSERT new department
@@ -42,10 +49,10 @@ try {
         }
 
         $stmt = $conn->prepare("
-            INSERT INTO departments (name, code, status, description, head)
-            VALUES (?, ?, ?, ?, ?)
+            INSERT INTO departments (name, code, status, description, head, channel)
+            VALUES (?, ?, ?, ?, ?, ?)
         ");
-        $stmt->execute([$name, $code, $status, $description, $head]);
+        $stmt->execute([$name, $code, $status, $description, $head, $channel]);
         echo json_encode(['success' => true, 'message' => "Department '{$name}' added successfully."]);
     }
 } catch (Exception $e) {

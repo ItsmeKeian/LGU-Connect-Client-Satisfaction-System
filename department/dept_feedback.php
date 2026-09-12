@@ -143,9 +143,8 @@ $deptInfo     = $deptStmt->fetch(PDO::FETCH_ASSOC);
         <select class="filter-select" id="filterType">
           <option value="">All Types</option>
           <option value="citizen">Citizen</option>
-          <option value="employee">Employee</option>
-          <option value="business_owner">Business Owner</option>
-          <option value="other">Other</option>
+          <option value="business">Business</option>
+          <option value="government">Government</option>
         </select>
         <select class="filter-select" id="filterPeriod">
           <option value="">All Time</option>

@@ -1,4 +1,3 @@
-
 // Date
 document.getElementById('todayDate').textContent =
   new Date().toLocaleDateString('en-PH',{weekday:'long',year:'numeric',month:'long',day:'numeric'});
@@ -46,7 +45,7 @@ function loadDashboard() {
       renderRatingChart(d.rating_dist);
       renderTrendChart(d.trend);
       renderVolumeChart(d.volume);
-      renderSQD(d.sqd);
+      renderSQD(d.sqd, d.sqd_labels);
       renderRecentFeedback(d.recent);
 
       document.getElementById('lastUpdated').textContent =
@@ -105,26 +104,24 @@ function renderVolumeChart(volume) {
   });
 }
 
-function renderSQD(sqd) {
+// ── SQD Scores — UPDATED ──
+// Labels now come from sqdLabels (sent by get_dept_dashboard.php, resolved
+// from config/csm_questions.php using THIS department's actual channel)
+// instead of a hardcoded — and wrong — label list that lived in this file
+// (the 8th mismatched version found across this codebase).
+function renderSQD(sqd, sqdLabels) {
   if (!sqd) return;
-  const items = [
-    {key:'sqd0',label:'SQD0 — Citizens Charter'},
-    {key:'sqd1',label:'SQD1 — Service Speed'},
-    {key:'sqd2',label:'SQD2 — Transaction Time'},
-    {key:'sqd3',label:'SQD3 — Staff Courtesy'},
-    {key:'sqd4',label:'SQD4 — No Extra Fees'},
-    {key:'sqd5',label:'SQD5 — Process Compliance'},
-    {key:'sqd6',label:'SQD6 — Service Quality'},
-    {key:'sqd7',label:'SQD7 — Timely Delivery'},
-    {key:'sqd8',label:'SQD8 — Overall Satisfaction'},
-  ];
+  const keys = ['sqd0','sqd1','sqd2','sqd3','sqd4','sqd5','sqd6','sqd7','sqd8'];
   let html = '<div style="display:flex;flex-direction:column;gap:8px">';
-  items.forEach(item => {
-    const val = parseFloat(sqd[item.key]||0);
-    const pct = (val/5*100).toFixed(1);
-    const col = val>=4?'#1e7c3b':val>=3?'#1565c0':'#c0392b';
+  keys.forEach((key, idx) => {
+    const val   = parseFloat(sqd[key]||0);
+    const pct   = (val/5*100).toFixed(1);
+    const col   = val>=4?'#1e7c3b':val>=3?'#1565c0':'#c0392b';
+    const label = (sqdLabels && sqdLabels[key]) ? sqdLabels[key] : key.toUpperCase();
     html += `<div style="display:flex;align-items:center;gap:8px">
-      <div style="font-size:11px;color:#666;width:160px;flex-shrink:0">${item.label}</div>
+      <div style="font-size:11px;color:#666;width:230px;flex-shrink:0" title="${escHtml(label)}">
+        <strong>SQD${idx}</strong> — ${escHtml(label)}
+      </div>
       <div style="flex:1;height:8px;background:#f0f0f0;border-radius:4px;overflow:hidden">
         <div style="width:${pct}%;height:100%;background:${col};border-radius:4px;transition:width .8s ease"></div>
       </div>

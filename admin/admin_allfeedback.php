@@ -165,12 +165,15 @@ $avatarLetter = strtoupper(substr(CURRENT_USER, 0, 1));
           <option value="2">★★☆☆☆ (2)</option>
           <option value="1">★☆☆☆☆ (1)</option>
         </select>
+        <!-- UPDATED: official ARTA client types (Citizen / Business / Government).
+             Old categories (employee/business_owner/other) removed from this
+             filter since new submissions no longer use them — historical rows
+             with the old values can still be found via "All Respondent Types". -->
         <select class="filter-select" id="filterType">
           <option value="">All Respondent Types</option>
           <option value="citizen">Citizen</option>
-          <option value="employee">Employee</option>
-          <option value="business_owner">Business Owner</option>
-          <option value="other">Other</option>
+          <option value="business">Business</option>
+          <option value="government">Government</option>
         </select>
         <select class="filter-select" id="filterPeriod">
           <option value="">All Time</option>
@@ -259,8 +262,9 @@ $avatarLetter = strtoupper(substr(CURRENT_USER, 0, 1));
 </div>
 
 <!-- View Feedback Modal -->
+<!-- UPDATED: modal-lg -> modal-xl to fit the 3-column Overview and SQD grids -->
 <div class="modal fade" id="viewModal" tabindex="-1" aria-hidden="true">
-  <div class="modal-dialog modal-dialog-centered modal-lg">
+  <div class="modal-dialog modal-dialog-centered modal-xl">
     <div class="modal-content">
       <div class="modal-header">
         <span class="modal-title">

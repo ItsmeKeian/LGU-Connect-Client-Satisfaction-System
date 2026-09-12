@@ -1,5 +1,3 @@
-
-
 const BASE_URL = window.location.origin + '/lgu-connect/feedback.php?dept=';
 
 const DEPT_COLORS = [
@@ -70,6 +68,9 @@ function renderCards(depts) {
     const statusCls  = d.status === 'active' ? 'active' : 'inactive';
     const statusLbl  = d.status === 'active' ? 'Active' : 'Inactive';
     const fbCount    = parseInt(d.feedback_count) || 0;
+    const channel    = d.channel === 'online' ? 'online' : 'onsite';
+    const channelLbl = channel === 'online' ? 'Online' : 'Onsite';
+    const channelIcon= channel === 'online' ? 'bi-wifi' : 'bi-shop';
 
     // Satisfaction label & color
     let satLabel, satColor;
@@ -112,6 +113,9 @@ function renderCards(depts) {
           <div class="dept-name">${escHtml(d.name)}</div>
           <div class="dept-code" style="color:${color};font-weight:600;font-size:0.72rem;">${escHtml(d.code)}</div>
           ${d.head ? `<div class="dept-code mt-1"><i class="bi bi-person me-1"></i>${escHtml(d.head)}</div>` : ''}
+          <div class="dept-code mt-1" style="color:#888">
+            <i class="bi ${channelIcon} me-1"></i>${channelLbl}
+          </div>
 
           <div class="dept-stats">
             <div class="dept-stat">
@@ -179,6 +183,7 @@ function openAddModal() {
     document.getElementById(id).value = '';
   });
   document.getElementById('deptStatus').value = 'active';
+  document.getElementById('deptChannel').value = 'onsite'; // NEW — default channel
   deptModal.show();
 }
 
@@ -200,6 +205,7 @@ function openEditModal(d) {
   document.getElementById('deptName').value    = d.name;
   document.getElementById('deptCode').value    = d.code;
   document.getElementById('deptStatus').value  = d.status;
+  document.getElementById('deptChannel').value = d.channel === 'online' ? 'online' : 'onsite'; // NEW
   document.getElementById('deptDesc').value    = d.description ?? '';
   document.getElementById('deptHead').value    = d.head ?? '';
   deptModal.show();
@@ -219,6 +225,7 @@ function saveDepartment() {
   const payload = {
     id, name, code,
     status:      document.getElementById('deptStatus').value,
+    channel:     document.getElementById('deptChannel').value, // NEW
     description: document.getElementById('deptDesc').value.trim(),
     head:        document.getElementById('deptHead').value.trim(),
   };
@@ -265,6 +272,8 @@ function confirmDelete() {
       showToast(res.message, 'success');
       loadDepartments();
     } else {
+      // e.g. "Cannot delete — it has N feedback record(s). Set it to
+      // Inactive instead..." from the updated delete_department.php
       showToast(res.message || 'Error deleting.', 'danger');
     }
   });

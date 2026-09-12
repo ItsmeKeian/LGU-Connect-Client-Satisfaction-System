@@ -13,6 +13,20 @@ if (empty($dept_code)) {
     exit;
 }
 
+// Official ARTA SQD wording (fixes the 8th mismatched hardcoded label set
+// found in this codebase — js/department/dashboard.js's renderSQD).
+// Unlike the system-wide admin dashboard, we know exactly which department
+// this is, so we resolve ITS actual channel for accurate wording.
+$csm = include __DIR__ . '/../config/csm_questions.php';
+$channel = 'onsite';
+$chStmt = $conn->prepare("SELECT channel FROM departments WHERE code = ? LIMIT 1");
+$chStmt->execute([$dept_code]);
+$chRow = $chStmt->fetch(PDO::FETCH_ASSOC);
+if ($chRow && !empty($chRow['channel'])) {
+    $channel = $chRow['channel'];
+}
+$sqd_labels = $csm['sqd']['en'][$channel] ?? $csm['sqd']['en']['onsite'];
+
 try {
 
     // ── 1. KPI Summary ──
@@ -118,6 +132,7 @@ try {
             'trend'             => $trend,
             'volume'            => $volume,
             'sqd'               => $sqd,
+            'sqd_labels'        => $sqd_labels, // NEW — official ARTA question text, keyed sqd0..sqd8
             'recent'            => $recent,
         ]
     ]);

@@ -1,3 +1,11 @@
+
+function toLocalISODate(d) {
+  const y = d.getFullYear();
+  const m = String(d.getMonth() + 1).padStart(2, '0');
+  const day = String(d.getDate()).padStart(2, '0');
+  return `${y}-${m}-${day}`;
+}
+
 // ── Init ──
 document.getElementById('todayDate').textContent =
   new Date().toLocaleDateString('en-PH',{weekday:'long',year:'numeric',month:'long',day:'numeric'});
@@ -44,8 +52,8 @@ function setDateRange(period){
     case 'this_year':    from=new Date(n.getFullYear(),0,1);to=new Date(n.getFullYear(),11,31);break;
     default: return;
   }
-  selectedFrom=from.toISOString().split('T')[0];
-  selectedTo=to.toISOString().split('T')[0];
+  selectedFrom=toLocalISODate(from);
+  selectedTo=toLocalISODate(to);
   const fmt=d=>new Date(d).toLocaleDateString('en-PH',{month:'long',day:'numeric',year:'numeric'});
   document.getElementById('datesDisplay').textContent=`${fmt(selectedFrom)} – ${fmt(selectedTo)}`;
 }
@@ -171,7 +179,12 @@ function renderSQDBars(s){
 }
 
 function renderDemo(res){
-  const typeMap={citizen:'Citizen',employee:'Employee',business_owner:'Business Owner',other:'Other'};
+  // UPDATED: added 'business' and 'government' (official ARTA client types).
+  // Old values kept for backward-compat with any pre-existing test data.
+  const typeMap={
+    citizen:'Citizen', business:'Business', government:'Government',
+    employee:'Employee (legacy)', business_owner:'Business Owner (legacy)', other:'Other (legacy)'
+  };
   const ageMap={below_18:'Below 18','18_30':'18–30','31_45':'31–45','46_60':'46–60',above_60:'Above 60'};
   document.getElementById('demoType').innerHTML=(res.by_type||[]).map(t=>`
     <div class="demo-item"><span class="demo-lbl">${typeMap[t.respondent_type]||t.respondent_type}</span><span class="demo-val">${t.total}</span></div>`).join('')||'<div style="color:#bbb;font-size:12px">No data</div>';
@@ -202,6 +215,7 @@ function openPrint(){
     title:         document.getElementById('reportTitle').value,
     incl_comments: document.getElementById('inclComments').checked?1:0,
     incl_charts:   document.getElementById('inclCharts').checked?1:0,
+    lang:          'en', // dept CSMR has no language selector UI — defaults to English
   });
   window.open('../admin/admin_csmr_generator_print.php?'+params.toString(),'_blank');
 }
