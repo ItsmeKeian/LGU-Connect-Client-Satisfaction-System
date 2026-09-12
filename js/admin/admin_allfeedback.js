@@ -9,18 +9,12 @@ let currentPage    = 1;
 let currentFilters = {};
 let perPage        = 10; // ✅ Default 10 per page
 
-// ── SQD Labels ──
-const SQD_LABELS = {
-  sqd0: 'Aware of Citizens Charter',
-  sqd1: 'Requirements are reasonable',
-  sqd2: 'Steps are simple',
-  sqd3: 'Time is reasonable',
-  sqd4: 'Cost is reasonable',
-  sqd5: 'Office is comfortable / clean',
-  sqd6: 'Staff are helpful / courteous',
-  sqd7: 'Service is fast',
-  sqd8: 'Staff followed rules'
-};
+// Holds the currently-loaded page of records, keyed by id, so the
+// View button can look a record up by id instead of embedding the
+// full JSON inline in an onclick="" attribute (which broke once
+// question/answer text containing apostrophes — e.g. "office's CC" —
+// got embedded there).
+let feedbackById = {};
 
 const RATING_LABELS = {
   5: 'Strongly Agree',
@@ -117,8 +111,11 @@ function loadFeedback(filters = {}, page = 1) {
     }
 
     // ── Render rows ──
+    feedbackById = {}; // reset for this page
     let rows = '';
     res.data.forEach((f, i) => {
+      feedbackById[f.id] = f;
+
       const stars    = '★'.repeat(f.rating) + '☆'.repeat(5 - f.rating);
       const typeLabel = (f.respondent_type || 'citizen').replace('_', ' ');
       const ageLabel  = formatAge(f.age_group);
@@ -130,10 +127,9 @@ function loadFeedback(filters = {}, page = 1) {
         hour:'2-digit', minute:'2-digit'
       });
       const rowNum = (page - 1) * perPage + i + 1;
-      const fJson  = encodeURIComponent(JSON.stringify(f));
 
       rows += `
-      <tr onclick="viewFeedbackById('${fJson}')" style="cursor:pointer;">
+      <tr onclick="viewFeedbackById(${f.id})" style="cursor:pointer;">
         <td style="color:#9a9390;font-size:0.72rem;">${rowNum}</td>
         <td><span class="dept-pill">${escHtml(f.department_code)}</span></td>
         <td>
@@ -147,7 +143,7 @@ function loadFeedback(filters = {}, page = 1) {
         <td>
           <button class="btn btn-sm"
             style="background:#fdf0f0;color:#B5121B;border:none;font-size:0.72rem;border-radius:6px;padding:4px 10px;"
-            onclick="event.stopPropagation();viewFeedbackById('${fJson}')">
+            onclick="event.stopPropagation();viewFeedbackById(${f.id})">
             <i class="bi bi-eye"></i> View
           </button>
         </td>
@@ -251,8 +247,12 @@ function changePerPage(val) {
 }
 
 // ── View feedback modal ──
-function viewFeedbackById(encoded) {
-  const f = JSON.parse(decodeURIComponent(encoded));
+function viewFeedbackById(id) {
+  const f = feedbackById[id];
+  if (!f) {
+    showToast('Could not find that record — try refreshing.', 'danger');
+    return;
+  }
   viewFeedback(f);
 }
 
@@ -260,71 +260,134 @@ function viewFeedback(f) {
   const stars = '★'.repeat(f.rating) + '☆'.repeat(5 - f.rating);
   const date  = new Date(f.submitted_at).toLocaleString('en-PH');
 
+  // ── SQD0-8, using per-row question text resolved server-side ──
+  // (correct wording regardless of language/channel the row was submitted under)
+  const sqdLabels = f.sqd_labels || {};
   let sqdHtml = '';
-  Object.keys(SQD_LABELS).forEach(key => {
-    if (f[key] !== null && f[key] !== undefined) {
-      const val   = parseInt(f[key]);
-      const pct   = (val / 5 * 100);
-      const color = val >= 4 ? '#2e7d32' : val >= 3 ? '#e65100' : '#B5121B';
+  Object.keys(sqdLabels).forEach((key, idx) => {
+    const raw = f[key];
+    const label = sqdLabels[key];
+
+    if (raw === null || raw === undefined) {
+      // N/A — explicitly shown, not treated as 0 or hidden
       sqdHtml += `
         <div class="sqd-item">
-          <div class="sqd-label">${SQD_LABELS[key]}</div>
+          <div class="sqd-label">SQD${idx} — ${escHtml(label)}</div>
           <div style="display:flex;align-items:center;gap:8px;margin-top:3px">
             <div style="flex:1;height:6px;background:#f0f0f0;border-radius:3px;overflow:hidden">
-              <div style="width:${pct}%;height:100%;background:${color};border-radius:3px"></div>
+              <div style="width:0%;height:100%;background:#bbb;border-radius:3px"></div>
             </div>
-            <div class="sqd-val" style="color:${color};min-width:60px;font-size:0.75rem">
-              ${val}/5 — ${RATING_LABELS[val] ?? '—'}
-            </div>
+            <div class="sqd-val" style="color:#888;min-width:60px;font-size:0.75rem">N/A</div>
           </div>
         </div>`;
+      return;
     }
+
+    const val   = parseInt(raw);
+    const pct   = (val / 5 * 100);
+    const color = val >= 4 ? '#2e7d32' : val >= 3 ? '#e65100' : '#B5121B';
+    sqdHtml += `
+      <div class="sqd-item">
+        <div class="sqd-label">SQD${idx} — ${escHtml(label)}</div>
+        <div style="display:flex;align-items:center;gap:8px;margin-top:3px">
+          <div style="flex:1;height:6px;background:#f0f0f0;border-radius:3px;overflow:hidden">
+            <div style="width:${pct}%;height:100%;background:${color};border-radius:3px"></div>
+          </div>
+          <div class="sqd-val" style="color:${color};min-width:60px;font-size:0.75rem">
+            ${val}/5 — ${RATING_LABELS[val] ?? '—'}
+          </div>
+        </div>
+      </div>`;
+  });
+
+  // ── CC1-3, using resolved question + answer text from the backend ──
+  const cc = f.cc_display || {};
+  let ccHtml = '';
+  ['cc1', 'cc2', 'cc3'].forEach(key => {
+    const item = cc[key];
+    if (!item) return;
+    ccHtml += `
+      <div class="detail-row">
+        <span class="detail-label">${key.toUpperCase()}</span>
+        <span class="detail-val">
+          ${item.answer
+            ? escHtml(item.answer)
+            : '<span style="color:#9a9390;font-style:italic;">Not answered</span>'}
+        </span>
+      </div>`;
   });
 
   const html = `
-    <div class="detail-row">
-      <span class="detail-label"><i class="bi bi-building me-1"></i> Department</span>
-      <span class="detail-val"><strong>${escHtml(f.department_code)}</strong></span>
+    <div class="detail-grid">
+      <div class="detail-cell">
+        <span class="detail-label"><i class="bi bi-building me-1"></i> Department</span>
+        <span class="detail-val"><strong>${escHtml(f.department_code)}</strong></span>
+      </div>
+      <div class="detail-cell">
+        <span class="detail-label"><i class="bi bi-star me-1"></i> Overall Rating</span>
+        <span class="detail-val">
+          <span class="rating-pill rp-${f.rating} me-2">${f.rating} ★</span>
+          <span class="star-display">${stars}</span>
+        </span>
+      </div>
+      <div class="detail-cell">
+        <span class="detail-label"><i class="bi bi-person me-1"></i> Client Type</span>
+        <span class="detail-val" style="text-transform:capitalize;">
+          ${escHtml((f.respondent_type || 'citizen').replace('_', ' '))}
+        </span>
+      </div>
+      <div class="detail-cell">
+        <span class="detail-label"><i class="bi bi-gender-ambiguous me-1"></i> Sex</span>
+        <span class="detail-val" style="text-transform:capitalize;">
+          ${f.sex ? escHtml(f.sex.replace('_', ' ')) : '—'}
+        </span>
+      </div>
+      <div class="detail-cell">
+        <span class="detail-label"><i class="bi bi-calendar3 me-1"></i> Age Group</span>
+        <span class="detail-val">${formatAge(f.age_group)}</span>
+      </div>
+      <div class="detail-cell">
+        <span class="detail-label"><i class="bi bi-geo-alt me-1"></i> Region</span>
+        <span class="detail-val">${f.region ? escHtml(f.region) : '—'}</span>
+      </div>
+      <div class="detail-cell">
+        <span class="detail-label"><i class="bi bi-clipboard me-1"></i> Service Availed</span>
+        <span class="detail-val">${f.service_availed ? escHtml(f.service_availed) : '—'}</span>
+      </div>
+      <div class="detail-cell">
+        <span class="detail-label"><i class="bi bi-envelope me-1"></i> Email</span>
+        <span class="detail-val">${f.email ? escHtml(f.email) : '<span style="color:#9a9390;font-style:italic;">Not provided</span>'}</span>
+      </div>
+      <div class="detail-cell">
+        <span class="detail-label"><i class="bi bi-translate me-1"></i> Language</span>
+        <span class="detail-val">${f.language === 'tl' ? 'Tagalog' : 'English'}</span>
+      </div>
+      <div class="detail-cell">
+        <span class="detail-label"><i class="bi bi-clock me-1"></i> Submitted</span>
+        <span class="detail-val">${date}</span>
+      </div>
+      <div class="detail-cell full">
+        <span class="detail-label"><i class="bi bi-chat-left-text me-1"></i> Comment</span>
+        <span class="detail-val">${f.comment
+          ? escHtml(f.comment)
+          : '<span style="color:#9a9390;font-style:italic;">No comment provided</span>'}</span>
+      </div>
+      <div class="detail-cell full">
+        <span class="detail-label"><i class="bi bi-lightbulb me-1"></i> Suggestions</span>
+        <span class="detail-val">${f.suggestions
+          ? escHtml(f.suggestions)
+          : '<span style="color:#9a9390;font-style:italic;">None</span>'}</span>
+      </div>
     </div>
-    <div class="detail-row">
-      <span class="detail-label"><i class="bi bi-star me-1"></i> Overall Rating</span>
-      <span class="detail-val">
-        <span class="rating-pill rp-${f.rating} me-2">${f.rating} ★</span>
-        <span class="star-display">${stars}</span>
-      </span>
-    </div>
-    <div class="detail-row">
-      <span class="detail-label"><i class="bi bi-person me-1"></i> Respondent</span>
-      <span class="detail-val" style="text-transform:capitalize;">
-        ${escHtml((f.respondent_type || 'citizen').replace('_', ' '))}
-      </span>
-    </div>
-    <div class="detail-row">
-      <span class="detail-label"><i class="bi bi-gender-ambiguous me-1"></i> Sex</span>
-      <span class="detail-val" style="text-transform:capitalize;">
-        ${f.sex ? escHtml(f.sex.replace('_', ' ')) : '—'}
-      </span>
-    </div>
-    <div class="detail-row">
-      <span class="detail-label"><i class="bi bi-calendar3 me-1"></i> Age Group</span>
-      <span class="detail-val">${formatAge(f.age_group)}</span>
-    </div>
-    <div class="detail-row">
-      <span class="detail-label"><i class="bi bi-chat-left-text me-1"></i> Comment</span>
-      <span class="detail-val">${f.comment
-        ? escHtml(f.comment)
-        : '<span style="color:#9a9390;font-style:italic;">No comment provided</span>'}</span>
-    </div>
-    <div class="detail-row">
-      <span class="detail-label"><i class="bi bi-lightbulb me-1"></i> Suggestions</span>
-      <span class="detail-val">${f.suggestions
-        ? escHtml(f.suggestions)
-        : '<span style="color:#9a9390;font-style:italic;">None</span>'}</span>
-    </div>
-    <div class="detail-row">
-      <span class="detail-label"><i class="bi bi-clock me-1"></i> Submitted</span>
-      <span class="detail-val">${date}</span>
-    </div>
+
+    ${ccHtml ? `
+    <div style="margin-top:16px;">
+      <div style="font-size:0.8rem;font-weight:700;color:#3a3a3a;margin-bottom:10px;">
+        <i class="bi bi-file-earmark-text me-1"></i> Citizen's Charter (CC1–CC3)
+      </div>
+      ${ccHtml}
+    </div>` : ''}
+
     ${sqdHtml ? `
     <div style="margin-top:16px;">
       <div style="font-size:0.8rem;font-weight:700;color:#3a3a3a;margin-bottom:10px;">

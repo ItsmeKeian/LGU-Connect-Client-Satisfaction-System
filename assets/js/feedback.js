@@ -269,7 +269,15 @@ function buildScaleOptions(name, t) {
 // ══════════════════════════════════════════
 // 3. Bind all events
 // ══════════════════════════════════════════
+// Guard flag — bindEvents() gets called again every time loadFormData()
+// succeeds (initial load AND every language switch). Without this guard,
+// the submit handler stacks up each time and causes duplicate inserts
+// (e.g. switch language once → form submits twice).
+let eventsAlreadyBound = false;
+
 function bindEvents() {
+  if (eventsAlreadyBound) return;
+  eventsAlreadyBound = true;
 
   // Overall rating label update
   $(document).on('change', 'input[name="rating"]', function () {
