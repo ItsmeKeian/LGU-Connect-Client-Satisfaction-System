@@ -1,11 +1,24 @@
+// ── Local date formatting helper ──
+// IMPORTANT: do NOT use `.toISOString().split('T')[0]` for local dates.
+// toISOString() always converts to UTC, and in timezones ahead of UTC
+// (e.g. Philippines, UTC+8), local midnight shifts back into the
+// previous day once converted — silently sending the wrong date to
+// the server. Same bug found and fixed earlier in admin_csmr_generator.js.
+function toLocalISODate(d) {
+  const y = d.getFullYear();
+  const m = String(d.getMonth() + 1).padStart(2, '0');
+  const day = String(d.getDate()).padStart(2, '0');
+  return `${y}-${m}-${day}`;
+}
+
 // ── Date display ──
 document.getElementById('todayDate').textContent =
   new Date().toLocaleDateString('en-PH',{weekday:'long',year:'numeric',month:'long',day:'numeric'});
 
 // ── Default date range ──
 const now = new Date();
-document.getElementById('filterDateFrom').value = new Date(now.getFullYear(), now.getMonth(), 1).toISOString().split('T')[0];
-document.getElementById('filterDateTo').value   = new Date(now.getFullYear(), now.getMonth()+1, 0).toISOString().split('T')[0];
+document.getElementById('filterDateFrom').value = toLocalISODate(new Date(now.getFullYear(), now.getMonth(), 1));
+document.getElementById('filterDateTo').value   = toLocalISODate(new Date(now.getFullYear(), now.getMonth()+1, 0));
 
 // ── Load departments ──
 $.ajax({
@@ -49,8 +62,8 @@ function applyQuickRange() {
       to   = new Date(); break;
     default: return;
   }
-  document.getElementById('filterDateFrom').value = from.toISOString().split('T')[0];
-  document.getElementById('filterDateTo').value   = to.toISOString().split('T')[0];
+  document.getElementById('filterDateFrom').value = toLocalISODate(from);
+  document.getElementById('filterDateTo').value   = toLocalISODate(to);
   updateStats();
 }
 
@@ -66,6 +79,8 @@ function updateStats() {
     from && to ? fmtDate(from) + ' – ' + fmtDate(to) : '—';
 
   // Fetch quick counts via AJAX
+  // NOTE: period:'custom' now handled server-side in get_analytics_data.php —
+  // previously it silently fell through to 'this_month' and ignored date_from/date_to.
   $.ajax({
     url: '../php/get/get_analytics_data.php',
     method: 'POST',
@@ -122,11 +137,17 @@ function loadExportHistory() {
     method: 'GET',
     dataType: 'json',
     success(res) {
-      if (!res.success) return;
+      if (!res.success) {
+        console.error('[ExportData] get_export_logs returned success:false —', res.message || res);
+        return;
+      }
       renderLogFromDB(res.logs);
     },
     error(xhr) {
-      console.error('Export log error:', xhr.responseText);
+      // Was previously a silent failure point — now logs the raw response
+      // so a broken get_export_logs.php shows up in the console immediately
+      // instead of just leaving the history list stuck on "Loading…".
+      console.error('[ExportData] get_export_logs request failed:', xhr.status, xhr.responseText);
     }
   });
 }

@@ -2,6 +2,9 @@
 require "../auth_check.php";
 require "../dbconnect.php";
 
+// Official ARTA SQD wording
+$csm = include __DIR__ . '/../config/csm_questions.php';
+
 // ── Auth: allow both roles ──
 if (!IS_SUPERADMIN && !IS_DEPT_USER) {
     http_response_code(403); echo 'Unauthorized.'; exit;
@@ -35,6 +38,21 @@ if ($rating >= 1 && $rating <= 5) {
     $params[':rating'] = $rating;
 }
 
+// ── Resolve SQD wording for the 'sqd' export headers: use the filtered
+// department's channel if one is selected, otherwise default to 'onsite'.
+// Always English for exported reports (consistent with Analytics/Predictive —
+// only the citizen-facing form and the printed CSMR have a language toggle).
+$channel = 'onsite';
+if ($dept_code) {
+    $chStmt = $conn->prepare("SELECT channel FROM departments WHERE code = ? LIMIT 1");
+    $chStmt->execute([$dept_code]);
+    $chRow = $chStmt->fetch(PDO::FETCH_ASSOC);
+    if ($chRow && !empty($chRow['channel'])) {
+        $channel = $chRow['channel'];
+    }
+}
+$sqd_text = $csm['sqd']['en'][$channel] ?? $csm['sqd']['en']['onsite'];
+
 // ── Filename ──
 $dept_slug = $dept_code ? '_'.strtolower(preg_replace('/[^a-zA-Z0-9]/','', $dept_code)) : '';
 $date_slug = str_replace('-','', $date_from_dt).'_'.str_replace('-','', $date_to_dt);
@@ -44,12 +62,16 @@ try {
     switch ($type) {
 
         case 'feedback':
+            // UPDATED: added region, service_availed, email, language, cc1-3
             $stmt = $conn->prepare("
                 SELECT f.id AS '#',
                     COALESCE(d.name, f.department_code) AS 'Department',
                     f.department_code AS 'Dept Code',
                     f.respondent_type AS 'Respondent Type',
                     f.sex AS 'Sex', f.age_group AS 'Age Group',
+                    f.region AS 'Region', f.service_availed AS 'Service Availed',
+                    f.email AS 'Email', f.language AS 'Language',
+                    f.cc1 AS 'CC1', f.cc2 AS 'CC2', f.cc3 AS 'CC3',
                     f.rating AS 'Overall Rating',
                     f.sqd0 AS 'SQD0', f.sqd1 AS 'SQD1', f.sqd2 AS 'SQD2',
                     f.sqd3 AS 'SQD3', f.sqd4 AS 'SQD4', f.sqd5 AS 'SQD5',
@@ -63,11 +85,13 @@ try {
             $stmt->execute($params);
             $rows    = $stmt->fetchAll(PDO::FETCH_ASSOC);
             $headers = ['#','Department','Dept Code','Respondent Type','Sex','Age Group',
+                        'Region','Service Availed','Email','Language','CC1','CC2','CC3',
                         'Overall Rating','SQD0','SQD1','SQD2','SQD3','SQD4',
                         'SQD5','SQD6','SQD7','SQD8','Comment','Suggestions','Submitted At'];
             break;
 
         case 'summary':
+            // UPDATED: added CC1 Awareness % per department
             $stmt = $conn->prepare("
                 SELECT COALESCE(d.name, f.department_code) AS 'Department',
                     f.department_code AS 'Code',
@@ -79,6 +103,7 @@ try {
                     SUM(CASE WHEN f.rating=3 THEN 1 ELSE 0 END) AS 'Average (3)',
                     SUM(CASE WHEN f.rating=2 THEN 1 ELSE 0 END) AS 'Poor (2)',
                     SUM(CASE WHEN f.rating=1 THEN 1 ELSE 0 END) AS 'Very Poor (1)',
+                    ROUND(SUM(CASE WHEN f.cc1 IN (1,2,3) THEN 1 ELSE 0 END)*100.0/NULLIF(COUNT(f.id),0),1) AS 'CC1 Aware (%)',
                     ROUND(AVG(f.sqd0),2) AS 'Avg SQD0', ROUND(AVG(f.sqd1),2) AS 'Avg SQD1',
                     ROUND(AVG(f.sqd2),2) AS 'Avg SQD2', ROUND(AVG(f.sqd3),2) AS 'Avg SQD3',
                     ROUND(AVG(f.sqd4),2) AS 'Avg SQD4', ROUND(AVG(f.sqd5),2) AS 'Avg SQD5',
@@ -92,23 +117,36 @@ try {
             $rows    = $stmt->fetchAll(PDO::FETCH_ASSOC);
             $headers = ['Department','Code','Total Responses','Avg Rating','Satisfaction Rate (%)',
                         'Excellent (5)','Good (4)','Average (3)','Poor (2)','Very Poor (1)',
+                        'CC1 Aware (%)',
                         'Avg SQD0','Avg SQD1','Avg SQD2','Avg SQD3','Avg SQD4',
                         'Avg SQD5','Avg SQD6','Avg SQD7','Avg SQD8'];
             break;
 
         case 'sqd':
+            // FIXED: column headers now use the official ARTA SQD wording
+            // (6th mismatched hardcoded version found across this codebase).
+            $h0 = "SQD0 - {$sqd_text['sqd0']}";
+            $h1 = "SQD1 - {$sqd_text['sqd1']}";
+            $h2 = "SQD2 - {$sqd_text['sqd2']}";
+            $h3 = "SQD3 - {$sqd_text['sqd3']}";
+            $h4 = "SQD4 - {$sqd_text['sqd4']}";
+            $h5 = "SQD5 - {$sqd_text['sqd5']}";
+            $h6 = "SQD6 - {$sqd_text['sqd6']}";
+            $h7 = "SQD7 - {$sqd_text['sqd7']}";
+            $h8 = "SQD8 - {$sqd_text['sqd8']}";
+
             $stmt = $conn->prepare("
                 SELECT COALESCE(d.name, f.department_code) AS 'Department',
                     COUNT(f.id) AS 'Responses',
-                    ROUND(AVG(f.sqd0),2) AS 'SQD0 - Anti-Red Tape Awareness',
-                    ROUND(AVG(f.sqd1),2) AS 'SQD1 - Service Speed',
-                    ROUND(AVG(f.sqd2),2) AS 'SQD2 - Updated Service Info',
-                    ROUND(AVG(f.sqd3),2) AS 'SQD3 - Staff Courtesy',
-                    ROUND(AVG(f.sqd4),2) AS 'SQD4 - No Unnecessary Docs',
-                    ROUND(AVG(f.sqd5),2) AS 'SQD5 - No Extra Payment',
-                    ROUND(AVG(f.sqd6),2) AS 'SQD6 - Simple Process',
-                    ROUND(AVG(f.sqd7),2) AS 'SQD7 - Service as Promised',
-                    ROUND(AVG(f.sqd8),2) AS 'SQD8 - Overall Satisfaction',
+                    ROUND(AVG(f.sqd0),2) AS '$h0',
+                    ROUND(AVG(f.sqd1),2) AS '$h1',
+                    ROUND(AVG(f.sqd2),2) AS '$h2',
+                    ROUND(AVG(f.sqd3),2) AS '$h3',
+                    ROUND(AVG(f.sqd4),2) AS '$h4',
+                    ROUND(AVG(f.sqd5),2) AS '$h5',
+                    ROUND(AVG(f.sqd6),2) AS '$h6',
+                    ROUND(AVG(f.sqd7),2) AS '$h7',
+                    ROUND(AVG(f.sqd8),2) AS '$h8',
                     ROUND((AVG(f.sqd0)+AVG(f.sqd1)+AVG(f.sqd2)+AVG(f.sqd3)+
                            AVG(f.sqd4)+AVG(f.sqd5)+AVG(f.sqd6)+AVG(f.sqd7)+
                            AVG(f.sqd8))/9,2) AS 'Overall SQD Average'
@@ -118,12 +156,7 @@ try {
             ");
             $stmt->execute($params);
             $rows    = $stmt->fetchAll(PDO::FETCH_ASSOC);
-            $headers = ['Department','Responses',
-                        'SQD0 - Anti-Red Tape Awareness','SQD1 - Service Speed',
-                        'SQD2 - Updated Service Info','SQD3 - Staff Courtesy',
-                        'SQD4 - No Unnecessary Docs','SQD5 - No Extra Payment',
-                        'SQD6 - Simple Process','SQD7 - Service as Promised',
-                        'SQD8 - Overall Satisfaction','Overall SQD Average'];
+            $headers = ['Department','Responses', $h0,$h1,$h2,$h3,$h4,$h5,$h6,$h7,$h8, 'Overall SQD Average'];
             break;
 
         // ── Comments (new for dept_export) ──
@@ -194,7 +227,8 @@ try {
         $esc = fn($v) => htmlspecialchars((string)($v ?? ''), ENT_QUOTES, 'UTF-8');
         $numCols = ['#','ID','Overall Rating','Total Responses','Total Feedback',
                     'Excellent (5)','Good (4)','Average (3)','Poor (2)','Very Poor (1)',
-                    'Responses','SQD0','SQD1','SQD2','SQD3','SQD4','SQD5','SQD6','SQD7','SQD8'];
+                    'Responses','SQD0','SQD1','SQD2','SQD3','SQD4','SQD5','SQD6','SQD7','SQD8',
+                    'CC1','CC2','CC3','CC1 Aware (%)'];
 
         echo '<?xml version="1.0" encoding="UTF-8"?>'."\n";
         echo '<Workbook xmlns="urn:schemas-microsoft-com:office:spreadsheet"

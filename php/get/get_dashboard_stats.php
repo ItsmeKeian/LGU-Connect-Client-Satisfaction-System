@@ -5,6 +5,14 @@ requireSuperAdmin();
 
 header('Content-Type: application/json');
 
+// Official ARTA SQD wording (fixes the 7th mismatched hardcoded label
+// set found in this codebase — admin_dashboard.js's renderSQDChart tooltips
+// previously used its own wrong hardcoded list).
+// Dashboard is system-wide, so there's no single department channel to
+// resolve — defaults to 'onsite' English wording.
+$csm = include __DIR__ . '/../config/csm_questions.php';
+$sqd_labels = $csm['sqd']['en']['onsite'];
+
 try {
 
     // ── 1. Overall KPIs ──
@@ -159,6 +167,7 @@ try {
             'volume'            => $volumeRows,
             'dept_chart'        => $deptChart,
             'sqd'               => $sqd,
+            'sqd_labels'        => $sqd_labels, // NEW — official ARTA question text, keyed sqd0..sqd8
 
             // Monthly mini stats
             'monthly'           => [

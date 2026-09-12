@@ -43,7 +43,7 @@ function loadDashboard() {
       renderKPIs(d);
       renderTrendChart(d.trend);
       renderDeptChart(d.dept_chart);
-      renderSQDChart(d.sqd);
+      renderSQDChart(d.sqd, d.sqd_labels);
       renderVolumeChart(d.volume);
       renderDeptTable(d.dept_chart);
       renderRecentFeedback(d.recent_feedback);
@@ -183,13 +183,13 @@ function renderDeptChart(deptData) {
   });
 }
 
-// ── SQD Radar/Bar Chart — real data ──
-function renderSQDChart(sqd) {
-  const labels = [
-    'SQD0\nAwareness', 'SQD1\nSpeed', 'SQD2\nInfo',
-    'SQD3\nCourtesy', 'SQD4\nDocs', 'SQD5\nPayment',
-    'SQD6\nProcess', 'SQD7\nPromise', 'SQD8\nOverall'
-  ];
+// ── SQD Chart — real data + real ARTA question text in tooltips ──
+// UPDATED: tooltip titles now come from sqdLabels (sent by get_dashboard_stats.php,
+// resolved from config/csm_questions.php) instead of a hardcoded — and wrong —
+// label list that lived in this file (the 7th mismatched version found across
+// this codebase: admin_allfeedback.js, get_feedback.php, admin_csmr_generator_print.php,
+// get_analytics_data.php, get_predictive_data.php, get_export_data.php, and this one).
+function renderSQDChart(sqd, sqdLabels) {
   const shortLabels = ['SQD0','SQD1','SQD2','SQD3','SQD4','SQD5','SQD6','SQD7','SQD8'];
   const values = shortLabels.map(k => parseFloat(sqd[k.toLowerCase()]) || 0);
   const bgColors = values.map(v =>
@@ -217,7 +217,11 @@ function renderSQDChart(sqd) {
         legend: { display: false },
         tooltip: {
           callbacks: {
-            title: (items) => labels[items[0].dataIndex]?.replace('\n', ' — '),
+            title: (items) => {
+              const key = shortLabels[items[0].dataIndex].toLowerCase();
+              const fullText = sqdLabels && sqdLabels[key] ? sqdLabels[key] : shortLabels[items[0].dataIndex];
+              return `${shortLabels[items[0].dataIndex]} — ${fullText}`;
+            },
           }
         }
       },

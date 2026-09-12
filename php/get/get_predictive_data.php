@@ -16,6 +16,11 @@ require "../dbconnect.php";
 
 header('Content-Type: application/json');
 
+// Official ARTA SQD wording (fixes the 5th mismatched hardcoded label
+// set found in this codebase — see admin_allfeedback.js, get_feedback.php,
+// admin_csmr_generator_print.php, and get_analytics_data.php for the others).
+$csm = include __DIR__ . '/../config/csm_questions.php';
+
 if (!IS_SUPERADMIN && !IS_DEPT_USER) {
     echo json_encode(['success' => false, 'message' => 'Unauthorized.']);
     exit;
@@ -23,6 +28,25 @@ if (!IS_SUPERADMIN && !IS_DEPT_USER) {
 
 // dept_user locked to own dept
 $dept_filter = IS_DEPT_USER ? CURRENT_DEPT : (trim($_GET['dept'] ?? '') ?: null);
+
+// ── Resolve SQD wording: use the filtered department's channel if one
+// is selected, otherwise default to 'onsite'. Always English — this is
+// an internal admin analytics tool, not the citizen-facing form or the
+// printed CSMR (which has its own language toggle).
+$channel = 'onsite';
+if ($dept_filter) {
+    $chStmt = $conn->prepare("SELECT channel FROM departments WHERE code = ? LIMIT 1");
+    $chStmt->execute([$dept_filter]);
+    $chRow = $chStmt->fetch(PDO::FETCH_ASSOC);
+    if ($chRow && !empty($chRow['channel'])) {
+        $channel = $chRow['channel'];
+    }
+}
+$sqd_text = $csm['sqd']['en'][$channel] ?? $csm['sqd']['en']['onsite'];
+// NOTE: labels here are the plain question text (no "SQDn —" prefix) because
+// admin_predictive.js already renders the SQD key in its own separate badge
+// next to the label — prefixing here would duplicate it visually.
+$sqd_labels = $sqd_text;
 
 try {
 
@@ -250,25 +274,13 @@ try {
     $sqdStmt->execute($params);
     $sqdAvg = $sqdStmt->fetch(PDO::FETCH_ASSOC);
 
-    $sqd_labels = [
-        'sqd0' => 'Citizens Charter Awareness',
-        'sqd1' => 'Service Speed',
-        'sqd2' => 'Transaction Time Compliance',
-        'sqd3' => 'Staff Courtesy & Helpfulness',
-        'sqd4' => 'No Extra Fees',
-        'sqd5' => 'Process Compliance',
-        'sqd6' => 'Service Quality Standard',
-        'sqd7' => 'Timely Service Delivery',
-        'sqd8' => 'Overall Satisfaction',
-    ];
-
     $sqd_analysis = [];
     $overall_sqd_avg = 0;
     $sqd_count = 0;
 
     foreach ($sqd_labels as $key => $label) {
         $val = floatval($sqdAvg[$key] ?? 0);
-        if ($val === 0.0) continue;
+        if ($val === 0.0) continue; // no data for this dimension in the window
 
         $overall_sqd_avg += $val;
         $sqd_count++;
@@ -278,13 +290,13 @@ try {
 
         if ($val < 3.0) {
             $status = 'critical';
-            $recommendation = "Immediate action needed. Consider reviewing procedures for {$label}.";
+            $recommendation = "Immediate action needed. Consider reviewing procedures related to: \"{$label}\"";
         } elseif ($val < 3.5) {
             $status = 'weak';
-            $recommendation = "Below acceptable threshold. Focus improvement efforts on {$label}.";
+            $recommendation = "Below acceptable threshold. Focus improvement efforts on: \"{$label}\"";
         } elseif ($val < 4.0) {
             $status = 'needs_improvement';
-            $recommendation = "Slightly below target. Monitor and improve {$label}.";
+            $recommendation = "Slightly below target. Monitor and improve: \"{$label}\"";
         } else {
             $recommendation = "Performing well. Maintain current standards.";
         }

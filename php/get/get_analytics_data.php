@@ -48,6 +48,13 @@ switch ($period) {
         $from = date('Y-m-01');
         $to   = date('Y-m-t');
         break;
+    case 'custom':
+        // Used by Export Data's date-range filter, which sends period=custom
+        // along with explicit date_from/date_to — without this case it fell
+        // through to 'this_month' and silently ignored the actual filter.
+        $from = $_POST['date_from'] ?? date('Y-m-01');
+        $to   = $_POST['date_to']   ?? date('Y-m-t');
+        break;
 }
 
 $where  = "WHERE DATE(f.submitted_at) BETWEEN :from AND :to";
