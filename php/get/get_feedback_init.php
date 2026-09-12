@@ -6,6 +6,12 @@ header('Content-Type: application/json');
 
 $dept_code = strtoupper(trim($_GET['dept'] ?? ''));
 
+// ── Language: 'en' (default) or 'tl' ──
+$lang = strtolower(trim($_GET['lang'] ?? 'en'));
+if (!in_array($lang, ['en', 'tl'])) {
+    $lang = 'en';
+}
+
 // ── 1. Is feedback open? ──
 $is_open = $conn->query(
     "SELECT setting_value FROM settings WHERE setting_key='feedback_open' LIMIT 1"
@@ -25,32 +31,54 @@ $lgu = [
 ];
 
 // ── 3. Specific department (from URL ?dept=CODE) ──
+// NOTE: now also fetching `channel` so we know whether to load
+// onsite or online SQD4/6/7 wording for this department.
 $department = null;
+$channel = 'onsite'; // default when no department is pre-selected yet
 if ($dept_code) {
     $stmt = $conn->prepare(
-        "SELECT code, name, head, description FROM departments WHERE code = ? AND status = 'active' LIMIT 1"
+        "SELECT code, name, head, description, channel FROM departments WHERE code = ? AND status = 'active' LIMIT 1"
     );
     $stmt->execute([$dept_code]);
     $department = $stmt->fetch(PDO::FETCH_ASSOC) ?: null;
+
+    if ($department && !empty($department['channel'])) {
+        $channel = $department['channel'];
+    }
 }
 
 // ── 4. All active departments (for dropdown) ──
+// Also include channel here — needed because if the citizen picks a
+// department from the dropdown (no ?dept= in URL), the frontend must
+// re-fetch or already know that department's channel before showing
+// the correct SQD wording.
 $all_depts = $conn->query(
-    "SELECT code, name FROM departments WHERE status = 'active' ORDER BY name ASC"
+    "SELECT code, name, channel FROM departments WHERE status = 'active' ORDER BY name ASC"
 )->fetchAll(PDO::FETCH_ASSOC);
 
-// ── 5. SQD Questions (ARTA standard) ──
-$sqd_questions = [
-    ['key' => 'sqd0', 'question' => "I am aware of the office's Citizens Charter."],
-    ['key' => 'sqd1', 'question' => "I spent an acceptable amount of time waiting for the service."],
-    ['key' => 'sqd2', 'question' => "The office followed the transaction time as indicated in the Citizens Charter."],
-    ['key' => 'sqd3', 'question' => "The officer/employee who attended to me was helpful, courteous, and respectful."],
-    ['key' => 'sqd4', 'question' => "I paid the required fees for the service and nothing more."],
-    ['key' => 'sqd5', 'question' => "The officer/employee who attended to me followed the prescribed process."],
-    ['key' => 'sqd6', 'question' => "The office's service quality is at par with the standard set by the Citizens Charter."],
-    ['key' => 'sqd7', 'question' => "The office was able to deliver the service in a timely manner."],
-    ['key' => 'sqd8', 'question' => "I am satisfied with the service I received."],
-];
+// ── 5. Official ARTA CSM Questions (SQD0-8 + CC1-3) ──
+// Loaded from config file, keyed by language and channel.
+$csm = include __DIR__ . '/../config/csm_questions.php';
+
+$sqd_raw = $csm['sqd'][$lang][$channel] ?? $csm['sqd']['en']['onsite'];
+$cc_raw  = $csm['cc'][$lang] ?? $csm['cc']['en'];
+
+// Convert sqd_raw (assoc: sqd0 => "text") into the ordered list shape
+// feedback.js already expects: [ {key, question}, ... ]
+$sqd_questions = [];
+foreach ($sqd_raw as $key => $question) {
+    $sqd_questions[] = ['key' => $key, 'question' => $question];
+}
+
+// CC questions shape: [ {key, question, options: {1=>text,...}}, ... ]
+$cc_questions = [];
+foreach ($cc_raw as $key => $data) {
+    $cc_questions[] = [
+        'key'      => $key,
+        'question' => $data['question'],
+        'options'  => $data['options'],
+    ];
+}
 
 echo json_encode([
     'success'       => true,
@@ -58,5 +86,8 @@ echo json_encode([
     'lgu'           => $lgu,
     'department'    => $department,
     'all_depts'     => $all_depts,
+    'lang'          => $lang,
+    'channel'       => $channel,
     'sqd_questions' => $sqd_questions,
+    'cc_questions'  => $cc_questions,
 ]);
